@@ -17,14 +17,16 @@ Find native Japanese content that genuinely matches your taste — not a generic
 
 Run `/content-discovery` and the skill will walk you through the process interactively.
 
-## Step 1 — Understand their taste
+## Step 1 — Understand their taste and level
 
-Ask the person to share:
-- 3–5 things they enjoy in their native language (shows, podcasts, games, books, YouTube channels, hobbies, genres, topics — anything)
-- 1–3 things they actively dislike or find boring
-- Any Japanese content they have already tried, with an honest reaction to each
+Walk the user through these questions **one at a time**. Ask one question, wait for their answer, then move to the next. Do not present all questions at once.
 
-Listen carefully. Build a private mental profile of their actual taste, not their "learner identity."
+1. First, ask: What are 3–5 things you enjoy in English? (shows, podcasts, games, books, YouTube channels, hobbies, genres, topics — anything)
+2. Then ask: Is there anything you actively dislike or find boring?
+3. Then ask: Have you tried any Japanese content before? If so, what was it and how did you feel about it?
+4. Finally, ask about their comprehension level: Roughly how much do you understand when you listen to native Japanese? (e.g., "I catch a few words," "I follow the gist but miss details," "I understand most of it but struggle with fast speech or specialized vocabulary"). If they're unsure, ask what they've watched recently and how much they felt they understood.
+
+After gathering all answers, build a private mental profile of their actual taste *and* their comprehension level. The goal is to find content that is both **entertaining and comprehensible** — something they genuinely want to watch that they can also meaningfully follow.
 
 ## Step 2 — Think in Japanese
 
@@ -46,11 +48,18 @@ Run multiple web searches. All search queries must be written in Japanese. Searc
 
 Do at least 6–8 separate searches. Do not stop at your training data. Assume your training data is biased toward what has been written about in English.
 
-## Step 4 — Filter with taste, not difficulty
+## Step 4 — Filter for taste and comprehensibility
 
-Do NOT filter recommendations based on whether they are "learner-friendly," use "clear pronunciation," or have subtitles. Filter only on whether they match the person's taste profile from Step 1.
+Filter recommendations based on two things: whether they match the person's taste profile from Step 1, and whether the content is likely to be comprehensible at their level.
 
-If something is a perfect taste match but genuinely very difficult, include it anyway — label it clearly and let the person decide.
+Think about what makes content more or less comprehensible:
+- Visual support (can you follow along even if you miss words?)
+- Speaking pace and clarity
+- Vocabulary domain (everyday life vs. technical/academic)
+- Repetition and predictability (daily vlogs vs. dense one-off lectures)
+- Context clues (cooking shows where you can see what's happening vs. abstract discussions)
+
+Prioritize content that sits at the sweet spot: engaging enough that they'll keep watching, and comprehensible enough that they're actually acquiring language from it. If something is a perfect taste match but clearly too far above their level, note that honestly and suggest it as a goal to work toward — then find something in the same vein that's more accessible.
 
 ## Step 5 — Present your findings
 
