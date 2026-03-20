@@ -11,22 +11,21 @@ These skills are designed for [Claude Code](https://docs.anthropic.com/en/docs/c
 3. **[Create SRT](create-srt.md)** — Generate Japanese subtitles from video using ElevenLabs Scribe and BudouX
 4. **[Translate SRT](translate-srt.md)** — Translate the Japanese subtitles into English for reference
 5. **[Primed Listening](primed-listening.lua)** — mpv script that pauses after each subtitle line, giving you time to read before listening
-6. **[Subs2SRS](subs2srs.md)** — Generate Anki decks from your content with audio clips and subtitle text
-7. **[Style Guide](style-guide.md)** — Analyze a native speaker's transcripts to create a speaking style guide you can internalize
+6. **Condensed Audio** — Use [subs2cia](https://github.com/mattvsjapan/subs2cia) to extract just the spoken audio for passive listening
+7. **[Subs2SRS](subs2srs.md)** — Generate Anki decks from your content with audio clips and subtitle text
+8. **[Style Guide](style-guide.md)** — Analyze a native speaker's transcripts to create a speaking style guide you can internalize
 
 ## Installation
 
-### As Claude Code skills
+Open your study folder in Claude Code and paste:
 
-Copy the `.md` skill files into your Claude Code custom skills directory:
+> Copy the skills from https://github.com/mattvsjapan/dojo-prompts into this project's .claude/skills/ directory
 
-```bash
-cp content-discovery.md create-srt.md translate-srt.md subs2srs.md style-guide.md ~/.claude/skills/
-```
-
-Then invoke them with `/content-discovery`, `/create-srt`, etc.
+Claude Code will clone the repo and copy everything into place. After that, you can use `/content-discovery`, `/create-srt`, `/translate-srt`, `/subs2srs`, and `/style-guide` from that folder.
 
 ### Primed Listening (mpv script)
+
+The primed listening script needs to be installed separately into mpv:
 
 ```bash
 cp primed-listening.lua ~/.config/mpv/scripts/
@@ -43,7 +42,11 @@ All skills also work as plain prompts — paste the contents into any AI chat (C
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading content
 - [ElevenLabs API key](https://elevenlabs.io/) with Scribe access (for create-srt)
 - [mpv](https://mpv.io/) media player (for primed listening)
-- Python packages: `budoux`, `genanki`, `subs2cia` ([required fork](https://github.com/mattvsjapan/subs2cia))
+- Python packages: `budoux`, `genanki`
+- [subs2cia](https://github.com/mattvsjapan/subs2cia) — **you must use this fork**, not the original. It adds context column support and other features used by the subs2srs and condensed audio steps. Install with:
+  ```bash
+  pip install git+https://github.com/mattvsjapan/subs2cia.git
+  ```
 
 ## Part of Immersion Dojo
 
