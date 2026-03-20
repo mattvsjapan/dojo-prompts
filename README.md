@@ -1,4 +1,4 @@
-# Immersion Dojo — AI Skills for Japanese Learners
+# Dojo Prompts — AI Skills for Japanese Learners
 
 AI-powered skills for immersion-based Japanese learning. Each skill is a structured workflow that an AI coding agent walks you through — find content, create subtitles, study with Anki, and build a speaking style modeled on a native speaker you admire.
 
@@ -53,4 +53,4 @@ All skills also work as plain prompts — paste the contents into any AI chat (C
 
 ## Part of Immersion Dojo
 
-These skills are part of the **Immersion Dojo** course on Skool. They're open source so the community can use, improve, and adapt them.
+These skills are part of the **[Immersion Dojo](https://mvj.link/dojo)** course on Skool. They're open source so the community can use, improve, and adapt them.

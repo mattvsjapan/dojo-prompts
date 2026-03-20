@@ -25,13 +25,19 @@ Run `/create-srt <video_file>` to generate an SRT file from a video.
 pip install budoux
 ```
 
-An ElevenLabs API key set as `$ELEVENLABS_API_KEY`.
+An ElevenLabs API key with Scribe access.
 
 ## Workflow
 
-### 1. Get the video file path
+### 1. Get the video file path and API key
 
-From the argument or ask the user.
+Get the video file path from the argument or ask the user.
+
+Check if `$ELEVENLABS_API_KEY` is set. If not, ask the user to paste their ElevenLabs API key. Store it as a shell variable for the duration of the session:
+
+```bash
+export ELEVENLABS_API_KEY="<key from user>"
+```
 
 ### 2. Transcribe with ElevenLabs Scribe v2
 
