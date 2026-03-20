@@ -1,30 +1,48 @@
-## Language Parent Style Guide Prompt
+---
+name: style-guide
+description: |
+  Generate a speaking style guide from transcripts of a native Japanese speaker
+  you want to sound like. Analyzes speech patterns, verbal tics, and tone.
+allowed-tools:
+  - Read
+  - Write
+  - Bash
+  - AskUserQuestion
+---
 
-Use this prompt with Claude, ChatGPT, or any capable AI to generate a speaking style guide for someone you want to sound like in your target language. This works best with 10-20 transcripts from long-form content (livestreams, podcasts, interviews) where the person is speaking naturally — not scripted content.
+# Style Guide
+
+Generate a speaking style guide for a native Japanese speaker you want to use as a "language parent" — someone whose speech patterns you want to internalize and replicate.
+
+## Usage
+
+Run `/style-guide` and the skill will walk you through the process.
+
+## Prerequisites
+
+This works best with 10–20 transcripts from long-form content (livestreams, podcasts, interviews) where the person is speaking naturally — not scripted content.
 
 ### How to get transcripts
 
 1. Go to your language parent's YouTube channel
 2. Use [yt-dlp](https://github.com/yt-dlp/yt-dlp) to download auto-generated subtitles:
-```
+```bash
 yt-dlp --write-auto-sub --sub-lang ja --skip-download --sub-format vtt "VIDEO_URL"
 ```
-(Replace `ja` with your target language code: `ko` for Korean, `zh` for Chinese, `es` for Spanish, etc.)
-
-3. If you can't use yt-dlp, you can also:
+3. Alternatives:
    - Copy auto-generated subtitles manually from YouTube (click the "..." menu → "Show transcript")
    - Use any other transcription tool on downloaded audio
    - Find existing transcripts online
 
-### The prompt
+## Workflow
 
-Paste your transcripts into a conversation with the AI, then use this prompt:
+1. **Gather transcripts** — Ask the user for transcript files or a directory containing them. Read the transcripts.
+2. **Analyze** — Produce a comprehensive Speaking Style Guide covering the sections below.
+3. **Output** — Write the guide to a file. The guide should be written in Japanese, with direct quotes from the transcripts as examples.
 
----
+## Analysis sections
 
-You are a linguist specializing in natural speech analysis. I'm giving you transcripts from a native speaker I want to use as a "language parent" — someone whose speaking style I want to internalize and eventually replicate.
-
-Analyze these transcripts and produce a comprehensive **Speaking Style Guide** covering the following areas. Write the guide in the target language, with the analysis sections also in the target language (since I'm trying to immerse myself in it). Include specific examples pulled directly from the transcripts for every pattern you identify.
+Write the guide in Japanese, with the analysis also in Japanese. Include specific examples pulled directly from the transcripts for every pattern identified.
 
 **1. Sentence structure and rhythm**
 - How do they construct sentences? Short and punchy, long and winding, or a mix?
@@ -67,15 +85,10 @@ Analyze these transcripts and produce a comprehensive **Speaking Style Guide** c
 - List the top 10 most actionable patterns to internalize
 - Provide a template showing the typical "flow" of how they answer a question or explain something
 
-For each section, pull **direct quotes from the transcripts** as examples. The examples should stay in the original language even if the analysis is written in another language.
-
----
-
-### Tips
+## Tips
 
 - **More transcripts = better results.** 5 is okay, 10 is good, 20 is great.
 - **Long-form unscripted content works best.** Livestreams, podcasts, and interviews reveal natural speech patterns. Scripted videos don't.
 - **Iterate.** After the first analysis, feed in more transcripts and ask: "Based on these additional transcripts, what patterns did you miss? Update the style guide."
 - **Add your own observations.** If you notice something the AI missed, tell it. "I notice they always say X when they're about to disagree — add that."
 - **Compare to your own speech.** Once you have the guide, ask the AI: "Here's a transcript of me speaking. Compare my patterns to the style guide and tell me what's different."
-

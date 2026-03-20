@@ -1,6 +1,23 @@
-# Japanese SRT Subtitle Pipeline
+---
+name: create-srt
+description: |
+  Generate Japanese SRT subtitles from a video file using ElevenLabs Scribe v2
+  and BudouX for natural phrase boundaries.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - AskUserQuestion
+---
 
-Generate natural Japanese subtitles from a raw video file using ElevenLabs Scribe v2 and BudouX.
+# Create SRT
+
+Generate natural Japanese subtitles from a video file using ElevenLabs Scribe v2 and BudouX.
+
+## Usage
+
+Run `/create-srt <video_file>` to generate an SRT file from a video.
 
 ## Requirements
 
@@ -8,9 +25,15 @@ Generate natural Japanese subtitles from a raw video file using ElevenLabs Scrib
 pip install budoux
 ```
 
-An ElevenLabs API key with Scribe access.
+An ElevenLabs API key set as `$ELEVENLABS_API_KEY`.
 
-## Step 1: Transcribe with ElevenLabs Scribe v2
+## Workflow
+
+### 1. Get the video file path
+
+From the argument or ask the user.
+
+### 2. Transcribe with ElevenLabs Scribe v2
 
 Upload the video to the ElevenLabs Speech-to-Text API with word-level timestamps and diarization enabled:
 
@@ -73,7 +96,7 @@ Key things to know:
 - `start` and `end` are timestamps in seconds.
 - Do not request `additional_formats` from the API — we build the SRT ourselves from the raw word data.
 
-## Step 2: Generate the SRT with BudouX phrase boundaries
+### 3. Generate the SRT with BudouX phrase boundaries
 
 BudouX is Google's ML-based line break library for Japanese. It predicts natural phrase (bunsetsu) boundaries, so subtitles never split mid-word.
 
