@@ -20,11 +20,11 @@ These skills are designed for [Claude Code](https://docs.anthropic.com/en/docs/c
 
 ## Installation
 
-Open your study folder in Claude Code and paste:
+1. Open your study folder in Claude Code
+2. Paste: `git clone https://github.com/mattvsjapan/dojo-prompts`
+3. Paste: `cp dojo-prompts/CLAUDE.md .`
 
-> Copy the skills from https://github.com/mattvsjapan/dojo-prompts into this project's .claude/skills/ directory
-
-Claude Code will clone the repo and copy everything into place. After that, you can use `/process-content`, `/content-discovery`, `/create-srt`, `/translate-srt`, `/subs2srs`, and `/style-guide` from that folder.
+That's it. Claude Code will now recognize your language learning requests and use the right skill automatically. Just say things like "help me discover content" or "process this YouTube video" and it will know what to do.
 
 ### Primed Listening (mpv script)
 
