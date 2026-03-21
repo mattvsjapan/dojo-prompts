@@ -31,7 +31,7 @@ Do not proceed until the correct fork is installed.
 
 ## Usage
 
-The user provides a source directory containing video files (typically .mkv with target language audio and subtitles). The skill processes all videos and outputs a single .apkg Anki deck. The user is an English speaker. The default target language is **Japanese**, but the user may specify another language.
+The user provides a source directory containing video files (typically .mp4 with target language audio and subtitles). The skill processes all videos and outputs a single .apkg Anki deck. The user is an English speaker. The default target language is **Japanese**, but the user may specify another language.
 
 ## Track Selection
 
@@ -49,8 +49,8 @@ Adapt track selection to whatever language the user specifies. Use the same ffpr
 Before running subs2cia, inspect a sample file to identify available tracks:
 
 ```bash
-ffprobe -v error -select_streams a -show_entries stream=index:stream_tags=language,title -of csv=p=0 "$SOURCE_DIR"/*.mkv 2>/dev/null | head -5
-ffprobe -v error -select_streams s -show_entries stream=index:stream_tags=language,title -of csv=p=0 "$SOURCE_DIR"/*.mkv 2>/dev/null | head -5
+ffprobe -v error -select_streams a -show_entries stream=index:stream_tags=language,title -of csv=p=0 "$SOURCE_DIR"/*.mp4 2>/dev/null | head -5
+ffprobe -v error -select_streams s -show_entries stream=index:stream_tags=language,title -of csv=p=0 "$SOURCE_DIR"/*.mp4 2>/dev/null | head -5
 ```
 
 ## Base Command
@@ -58,7 +58,7 @@ ffprobe -v error -select_streams s -show_entries stream=index:stream_tags=langua
 **Requires [mattvsjapan's fork](https://github.com/mattvsjapan/subs2cia) — see "Required Fork" section above.**
 
 ```bash
-subs2cia srs -b -i "*.mkv" -ai 0 -si 0 -p 500 -N -d out_srs --export-header-row
+subs2cia srs -b -i "*.mp4" -ai 0 -si 0 -p 500 -N -d out_srs --export-header-row
 ```
 
 ### Parameters Explained
@@ -67,7 +67,7 @@ subs2cia srs -b -i "*.mkv" -ai 0 -si 0 -p 500 -N -d out_srs --export-header-row
 |------|-------|---------|
 | `srs` | - | SRS subcommand (creates Anki-ready output) |
 | `-b` | - | Batch mode (process multiple files) |
-| `-i` | `"*.mkv"` | Input file pattern |
+| `-i` | `"*.mp4"` | Input file pattern |
 | `-ai` | `0` | Audio stream index (adjust based on track inspection) |
 | `-si` | `0` | Subtitle stream index (adjust based on track inspection) |
 | `-p` | `500` | Padding in ms around each subtitle line |
@@ -80,7 +80,7 @@ subs2cia srs -b -i "*.mkv" -ai 0 -si 0 -p 500 -N -d out_srs --export-header-row
 1. Get the source directory from the user
 2. **Check available audio and subtitle tracks** using ffprobe
 3. **Identify target language tracks** - find the indices for the target language audio and subtitles (default: Japanese)
-4. **Rename source video files** to standard format: `<show_name>_XX.mkv`
+4. **Rename source video files** to standard format: `<show_name>_XX.mp4`
 5. Navigate to the source directory
 6. Run subs2cia with the appropriate track indices
 7. **Generate episode summaries** - for each TSV, read subtitle text and generate a translation briefing (see Episode Summary Format below), then prepend it to every row's `context` column. Use subagents to process all TSVs in parallel.
@@ -93,15 +93,15 @@ subs2cia srs -b -i "*.mkv" -ai 0 -si 0 -p 500 -N -d out_srs --export-header-row
 
 Rename source video files to this format before processing:
 ```
-<show_name>_<episode>.mkv
+<show_name>_<episode>.mp4
 ```
 
 This ensures output files automatically follow the naming convention:
 - `<show_name>_<episode>_<start>-<end>.mp3`
 
 Examples:
-- `kiseijuu_01.mkv` → `kiseijuu_01_585-3377.mp3`
-- `oshi_no_ko_s2_13.mkv` → `oshi_no_ko_s2_13_4797-8508.mp3`
+- `kiseijuu_01.mp4` → `kiseijuu_01_585-3377.mp3`
+- `oshi_no_ko_s2_13.mp4` → `oshi_no_ko_s2_13_4797-8508.mp3`
 
 Rules for `<show_name>`:
 - All lowercase
@@ -115,8 +115,8 @@ Rules for `<show_name>`:
 SOURCE_DIR="/path/to/source"
 
 # 2. Check available tracks
-ffprobe -v error -select_streams a -show_entries stream=index:stream_tags=language,title -of csv=p=0 "$SOURCE_DIR"/*.mkv 2>/dev/null | head -5
-ffprobe -v error -select_streams s -show_entries stream=index:stream_tags=language,title -of csv=p=0 "$SOURCE_DIR"/*.mkv 2>/dev/null | head -5
+ffprobe -v error -select_streams a -show_entries stream=index:stream_tags=language,title -of csv=p=0 "$SOURCE_DIR"/*.mp4 2>/dev/null | head -5
+ffprobe -v error -select_streams s -show_entries stream=index:stream_tags=language,title -of csv=p=0 "$SOURCE_DIR"/*.mp4 2>/dev/null | head -5
 
 # 3. Based on track inspection, determine -ai and -si values
 # Select tracks matching the target language (default: Japanese)
@@ -125,14 +125,14 @@ ffprobe -v error -select_streams s -show_entries stream=index:stream_tags=langua
 # Ask user for the show name (e.g., "kiseijuu", "oshi_no_ko_s2")
 SHOW_NAME="<show_name>"
 cd "$SOURCE_DIR"
-for f in *.mkv; do
+for f in *.mp4; do
   # Extract episode number (handles formats like "E01", "- 01", " 01.")
   num=$(echo "$f" | sed -E 's/.*[E -]([0-9]{2})[.\-].*/\1/')
-  mv "$f" "${SHOW_NAME}_${num}.mkv"
+  mv "$f" "${SHOW_NAME}_${num}.mp4"
 done
 
 # 5. Run subs2cia (output files will inherit the source filename)
-subs2cia srs -b -i "*.mkv" -ai <audio_index> -si <subtitle_index> -p 500 -N -d out_srs --export-header-row
+subs2cia srs -b -i "*.mp4" -ai <audio_index> -si <subtitle_index> -p 500 -N -d out_srs --export-header-row
 
 # 6. Generate episode summaries and prepend to context column
 #    Launch subagents in parallel (one per TSV) to:
@@ -292,7 +292,7 @@ All intermediate files (TSVs, audio clips, screenshots, the `out_srs/` directory
 
 ## Adjustments
 
-- **Different video format**: Change `*.mkv` to `*.mp4` or other format
+- **Different video format**: Change `*.mp4` to `*.mp4` or other format
 - **Different track indices**: Adjust `-ai` and `-si` based on ffprobe output
 - **More/less padding**: Adjust `-p` value (default 500ms)
 

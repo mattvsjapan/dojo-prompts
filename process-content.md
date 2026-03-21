@@ -37,10 +37,10 @@ Download the video(s) using yt-dlp:
 
 ```bash
 # Single video
-yt-dlp -o "%(title)s.%(ext)s" "URL"
+yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(title)s.%(ext)s" "URL"
 
 # Playlist or channel
-yt-dlp -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
+yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
 ```
 
 Tell the user:
@@ -77,7 +77,7 @@ For each option the user selected:
 
 **Condensed audio** — Run subs2cia in condense mode. **You must use [mattvsjapan's fork of subs2cia](https://github.com/mattvsjapan/subs2cia)**, not the original — install with `pip install git+https://github.com/mattvsjapan/subs2cia.git`.
 ```bash
-subs2cia condense -i "*.mkv" -ai <audio_index> -si <subtitle_index> -d out_condense
+subs2cia condense -i "*.mp4" -ai <audio_index> -si <subtitle_index> -d out_condense
 ```
 Use the same track indices identified during the create-srt step.
 

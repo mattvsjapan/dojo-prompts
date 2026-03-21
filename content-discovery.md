@@ -21,10 +21,24 @@ Run `/content-discovery` and the skill will walk you through the process interac
 
 Walk the user through these questions **one at a time**. Ask one question, wait for their answer, then move to the next. Do not present all questions at once.
 
-1. First, ask: What are 3–5 things you enjoy in English? (shows, podcasts, games, books, YouTube channels, hobbies, genres, topics — anything)
-2. Then ask: Is there anything you actively dislike or find boring?
-3. Then ask: Have you tried any Japanese content before? If so, what was it and how did you feel about it?
-4. Finally, ask about their comprehension level: Roughly how much do you understand when you listen to native Japanese? (e.g., "I catch a few words," "I follow the gist but miss details," "I understand most of it but struggle with fast speech or specialized vocabulary"). If they're unsure, ask what they've watched recently and how much they felt they understood.
+**Start by asking:** How familiar are you with Japanese content? Have you been watching/listening to Japanese stuff for a while, or are you just getting started?
+
+### If they're new to Japanese content (Path A)
+
+They don't know what's out there yet, so use their English tastes as a starting point:
+
+1. Ask: What are 3–5 things you enjoy in English? (shows, podcasts, games, books, YouTube channels, hobbies, genres, topics — anything)
+2. Ask: Is there anything you actively dislike or find boring?
+3. Ask: Roughly how much do you understand when you listen to native Japanese? (e.g., "I catch a few words," "I follow the gist but miss details," "I understand most of it but struggle with fast speech or specialized vocabulary")
+
+### If they're already consuming Japanese content (Path B)
+
+Skip the English taste questions — they already know what they like in Japanese. Get straight to the point:
+
+1. Ask: What Japanese content do you currently enjoy? (channels, shows, podcasts, genres — anything)
+2. Ask: What have you tried that you didn't like, or what are you tired of?
+3. Ask: What are you looking for right now? (more of the same, something different, a specific genre or topic, something easier/harder?)
+4. Ask: Roughly how much do you understand when you listen to the content you watch? (to calibrate difficulty)
 
 After gathering all answers, build a private mental profile of their actual taste *and* their comprehension level. The goal is to find content that is both **entertaining and comprehensible** — something they genuinely want to watch that they can also meaningfully follow.
 
