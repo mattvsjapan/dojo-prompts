@@ -118,6 +118,14 @@ Optional flags for tuning:
 python3 dojo-prompts/scripts/scribe_to_srt.py scribe_output.json output.srt --target-chars 20 --max-chars 35 --gap-threshold 0.4
 ```
 
+### 4. Clean up
+
+Delete the intermediate JSON file after the SRT has been successfully created:
+
+```bash
+rm scribe_output.json
+```
+
 ## Tuning parameters
 
 | Parameter | Default | Effect |

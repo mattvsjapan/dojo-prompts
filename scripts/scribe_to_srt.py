@@ -83,6 +83,14 @@ for utt in utterances:
     full_text = ''.join(c['text'] for c in utt)
     phrases = parser.parse(full_text)
 
+    # Build a per-character timestamp map (each character in full_text maps
+    # to the start/end of the token it belongs to). This handles
+    # multi-character tokens (e.g. audio events like [音楽]) correctly.
+    char_timestamps = []
+    for c in utt:
+        for _ in c['text']:
+            char_timestamps.append({'start': c['start'], 'end': c['end']})
+
     # Map phrases back to character-level timestamps
     char_idx = 0
     phrase_spans = []
@@ -90,8 +98,8 @@ for utt in utterances:
         end_idx = char_idx + len(phrase)
         phrase_spans.append({
             'text': phrase,
-            'start': utt[char_idx]['start'],
-            'end': utt[min(end_idx - 1, len(utt) - 1)]['end'],
+            'start': char_timestamps[char_idx]['start'],
+            'end': char_timestamps[min(end_idx - 1, len(char_timestamps) - 1)]['end'],
         })
         char_idx = end_idx
 

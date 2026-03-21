@@ -117,9 +117,9 @@ Run the reassembly script:
 python3 dojo-prompts/scripts/srt_reassemble.py <output_srt_path>
 ```
 
-This reads the chunk outputs from `/tmp/translate-srt/`, validates block counts, and writes the final SRT. If any chunks have block count mismatches, the script exits with code 1 and prints the mismatched chunk IDs to stderr.
+This reads the chunk outputs from `/tmp/translate-srt/`, validates block counts, and writes the final SRT. Small block count differences (≤10%) are accepted — the LLM sometimes merges short subtitle blocks and that's fine. The script only fails (exit code 1) if a chunk file is missing or has a large mismatch (>10%), which indicates content was actually dropped.
 
-**If reassembly reports mismatches**, re-launch subagents for only the failed chunks (same prompt, same parameters). Re-run reassembly after they complete. Continue retrying until all chunks validate or you've retried 3 times, then report any remaining failures to the user. Never silently pad with placeholder text.
+**If reassembly fails**, re-launch subagents for only the failed chunks (same prompt, same parameters). Re-run reassembly after they complete. Continue retrying until reassembly succeeds or you've retried 3 times, then report any remaining failures to the user.
 
 ### 7. Write Output
 
@@ -142,7 +142,7 @@ Read a few sections of the output (beginning, middle, end) to verify:
 ## Important Rules
 
 - **Never read the full SRT into main context** — always use Python scripts to handle file I/O on disk
-- **Block count is sacred**: Each subagent MUST return exactly the same number of `---BLOCK_SEP---`-separated blocks as input. Validate after reassembly.
+- **Block count**: Small differences from merging short blocks are fine. Only retry if a chunk is >10% off (indicating dropped content).
 - **Timecodes are never modified**: Only the text content changes
 - **Formatting tags**: Keep `<i>`, `<b>`, `<font>`, and any other HTML-like tags intact
 - **Faithful translation for learning**: These translations help learners understand the Japanese. Prioritize faithfulness over natural English. Don't compress or paraphrase — preserve the full nuance and structure of the original

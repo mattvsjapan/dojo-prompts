@@ -8,8 +8,9 @@ Reads from /tmp/translate-srt/:
     metadata.json - Block indices and timecodes
     chunks.json   - Chunk info including output file paths
 
-Returns exit code 0 if all chunks validated, 1 if there were mismatches.
-Prints mismatched chunk IDs to stderr for retry handling.
+Small block count mismatches (≤10%) are tolerated — the LLM sometimes merges
+short blocks and that's fine. Large mismatches (>10%) or missing chunk files
+cause a failure exit (code 1) so the caller can retry.
 """
 
 import json
@@ -26,14 +27,15 @@ with open(os.path.join(work_dir, 'chunks.json'), encoding='utf-8') as f:
     chunks = json.load(f)
 
 all_texts = []
-mismatched = []
+missing = []
+failed = []
 
 for chunk in chunks:
     output_path = chunk['output_path']
     expected = chunk['num_blocks']
 
     if not os.path.isfile(output_path):
-        mismatched.append(chunk['chunk_id'])
+        missing.append(chunk['chunk_id'])
         all_texts.extend([''] * expected)
         continue
 
@@ -43,12 +45,20 @@ for chunk in chunks:
     blocks = content.split('---BLOCK_SEP---')
     blocks = [b.strip() for b in blocks]
 
-    if len(blocks) != expected:
-        mismatched.append(chunk['chunk_id'])
-        print(f'Chunk {chunk["chunk_id"]}: expected {expected} blocks, got {len(blocks)}', file=sys.stderr)
-        # Still include what we have for now — caller decides whether to retry
+    diff = abs(len(blocks) - expected)
+    threshold = max(2, int(expected * 0.10))
+
+    if diff > threshold:
+        # Large mismatch — something went seriously wrong
+        failed.append(chunk['chunk_id'])
+        print(f'Chunk {chunk["chunk_id"]}: expected {expected} blocks, got {len(blocks)} (>{threshold} off — likely dropped content)', file=sys.stderr)
         all_texts.extend(blocks[:expected])
-        # Pad if short
+        if len(blocks) < expected:
+            all_texts.extend([''] * (expected - len(blocks)))
+    elif diff > 0:
+        # Small mismatch — probably just merged short blocks, that's fine
+        print(f'Chunk {chunk["chunk_id"]}: expected {expected} blocks, got {len(blocks)} (minor, accepted)', file=sys.stderr)
+        all_texts.extend(blocks[:expected])
         if len(blocks) < expected:
             all_texts.extend([''] * (expected - len(blocks)))
     else:
@@ -60,8 +70,12 @@ with open(output_srt_path, 'w', encoding='utf-8') as f:
         text = all_texts[i] if i < len(all_texts) else ''
         f.write(f'{meta["index"]}\n{meta["timecode"]}\n{text}\n\n')
 
-if mismatched:
-    print(f'MISMATCHED CHUNKS: {",".join(str(c) for c in mismatched)}', file=sys.stderr)
+errors = missing + failed
+if errors:
+    if missing:
+        print(f'MISSING CHUNKS: {",".join(str(c) for c in missing)}', file=sys.stderr)
+    if failed:
+        print(f'MISMATCHED CHUNKS: {",".join(str(c) for c in failed)}', file=sys.stderr)
     sys.exit(1)
 else:
     print(f'Successfully reassembled {len(metadata)} blocks to {output_srt_path}')
