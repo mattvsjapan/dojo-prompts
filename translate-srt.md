@@ -1,8 +1,8 @@
 ---
 name: translate-srt
 description: |
-  Translate SRT subtitle files between languages using parallel subagents.
-  Handles chunking, context overlap, and reassembly automatically.
+  Translate Japanese SRT subtitles into English for language learning.
+  Prioritizes faithful representation of the Japanese over natural-sounding English.
 allowed-tools:
   - Read
   - Write
@@ -13,9 +13,9 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-# Translate SRT Subtitles
+# Translate SRT
 
-Translate SRT subtitle files between languages using parallel subagents for speed.
+Translate Japanese SRT subtitles into English for language learning purposes. These translations are meant to help learners understand what was said in Japanese — faithfulness to the original is more important than sounding natural in English.
 
 ## Usage
 
@@ -46,43 +46,31 @@ Determine:
 - **SRT file path** — from argument or ask the user
 - **Source language** — from argument, or read just the first ~30 lines to auto-detect
 - **Target language** — from argument or ask the user
-- **Translation style notes** — ask if the user has specific preferences (natural speech, formal, etc.)
+- **Translation style notes** — ask if the user has specific preferences (though the default is faithful/literal for language learning)
 
 ### 2. Split with Python
 
-Create `/tmp/translate-srt/` and write a Python script that:
-
-1. Reads the SRT file (handling BOM + CRLF: `encoding='utf-8-sig'`, `.replace('\r\n', '\n')`)
-2. Parses into blocks (split on `\n\n+`, each block = index + timecode + text lines)
-3. Saves `metadata.json` — list of `{index, timecode}` for every block (used for reassembly)
-4. Splits blocks into chunks of **100 blocks each** (use 50 for small files under 500 blocks)
-5. For each chunk, writes a chunk input file with:
-   - Context before section (5 preceding blocks, text only, marked as context)
-   - Translate section (the chunk's text lines, separated by `---BLOCK_SEP---` between blocks)
-   - Context after section (5 following blocks, text only, marked as context)
-6. Saves `chunks.json` — list of `{chunk_id, start_block, end_block, num_blocks, input_path, output_path}`
-
-Chunk input file format:
-```
-=== CONTEXT BEFORE (do NOT translate, reference only) ===
-{preceding block texts, separated by blank lines}
-=== END CONTEXT BEFORE ===
-
-=== TRANSLATE THE FOLLOWING ===
-{block 1 text}
----BLOCK_SEP---
-{block 2 text}
----BLOCK_SEP---
-{block 3 text}
-...
-=== END TRANSLATE ===
-
-=== CONTEXT AFTER (do NOT translate, reference only) ===
-{following block texts, separated by blank lines}
-=== END CONTEXT AFTER ===
+**First, delete and recreate `/tmp/translate-srt/`** to ensure a clean slate — stale chunk files from previous runs will cause agents to translate wrong data:
+```bash
+rm -rf /tmp/translate-srt && mkdir -p /tmp/translate-srt
 ```
 
-### 3. Launch Parallel Subagents
+Then run the split script:
+```bash
+python3 dojo-prompts/scripts/srt_split.py <srt_file_path>
+```
+
+This parses the SRT, saves `metadata.json` and `chunks.json` to `/tmp/translate-srt/`, and writes chunk input files with context sections and `---BLOCK_SEP---` separators.
+
+### 3. Verify Split Output
+
+**GATE: Do NOT proceed to subagents until you verify the split completed successfully.** Run:
+```bash
+cat /tmp/translate-srt/chunks.json | python3 -c "import json,sys; chunks=json.load(sys.stdin); print(f'{len(chunks)} chunks created'); [print(f'  chunk {c[\"chunk_id\"]}: {c[\"num_blocks\"]} blocks, input exists: {__import__(\"os\").path.isfile(c[\"input_path\"])}') for c in chunks]"
+```
+Every chunk must show `input exists: True`. If not, the split script failed — fix it before continuing.
+
+### 4. Launch Parallel Subagents
 
 Use the `Task` tool with `subagent_type: "general-purpose"` and `run_in_background: true` to launch **all chunks in parallel** (all Task calls in a single message).
 
@@ -97,16 +85,20 @@ Read the file {chunk_input_path}. It contains subtitle text blocks separated by
 Translate ONLY the blocks between "=== TRANSLATE THE FOLLOWING ===" and
 "=== END TRANSLATE ===". Do NOT translate context sections.
 
+This chunk has EXACTLY {num_blocks} blocks. Your output MUST contain exactly
+{num_blocks} blocks separated by {num_blocks - 1} ---BLOCK_SEP--- markers.
+
 CRITICAL RULES:
 - Output one translated block per input block, separated by ---BLOCK_SEP---
-- Preserve the EXACT number of blocks — this is critical for reassembly with timecodes
+- Preserve the EXACT number of blocks ({num_blocks}) — this is critical for reassembly with timecodes
 - Within each block, preserve the line structure (if a block has 2 lines, output 2 lines)
-- Translate for natural, realistic speech — how real people actually talk
-- AVOID 役割語 (yakuwarigo/role language) — no stereotypical speech patterns
-- Do NOT shorten or compress. Be faithful to the full nuance and length of the original
+- These subtitles are for LANGUAGE LEARNING. Faithfulness to the Japanese is more important than natural-sounding English. The reader is trying to understand what was said in Japanese, not read a polished English script.
+- Preserve the structure and nuance of the original Japanese. If a sentence is awkward or roundabout in Japanese, reflect that — don't clean it up into smooth English.
+- Do NOT shorten, compress, or paraphrase. Translate everything that was said.
+- When a Japanese word or phrase has no clean English equivalent, include the Japanese in parentheses — e.g., "it has a nostalgic feeling (懐かしい)"
 - Preserve ALL formatting tags (<b>, <font>, </b>, </font>, <i>, etc.) exactly
 - For sound effects/descriptions in tags like (MUSIC PLAYING), translate them too
-- Keep proper nouns (character names, place names) in their original form or standard katakana
+- Keep proper nouns (character names, place names) in their original form
 
 {any additional style notes from the user}
 
@@ -114,25 +106,22 @@ Write ONLY the translated blocks (with ---BLOCK_SEP--- separators) to
 {chunk_output_path}. No extra text, no explanations, no headers.
 ```
 
-### 4. Wait for Completion
+### 5. Wait for Completion
 
-Check output file count periodically:
+**Do NOT poll output file existence.** A file existing on disk does not mean the agent has finished writing to it — reading a partially-written file produces corrupted/truncated output. Instead, wait for all background agent completion notifications before proceeding to reassembly. Only after every agent has reported completion should you move to step 6.
+
+### 6. Reassemble and Validate
+
+Run the reassembly script:
 ```bash
-ls /tmp/translate-srt/chunk_*_output.txt 2>/dev/null | wc -l
+python3 dojo-prompts/scripts/srt_reassemble.py <output_srt_path>
 ```
 
-Wait until all output files exist before reassembling.
+This reads the chunk outputs from `/tmp/translate-srt/`, validates block counts, and writes the final SRT. If any chunks have block count mismatches, the script exits with code 1 and prints the mismatched chunk IDs to stderr.
 
-### 5. Reassemble with Python
+**If reassembly reports mismatches**, re-launch subagents for only the failed chunks (same prompt, same parameters). Re-run reassembly after they complete. Continue retrying until all chunks validate or you've retried 3 times, then report any remaining failures to the user. Never silently pad with placeholder text.
 
-Write a Python script that:
-1. Loads `metadata.json` (indices + timecodes) and `chunks.json` (chunk info)
-2. For each chunk, reads the output file and splits by `---BLOCK_SEP---`
-3. Validates block count matches expected (pad with `[TRANSLATION MISSING]` if short, truncate if long)
-4. Pairs each translated text with its original index + timecode
-5. Writes the final SRT: `{index}\n{timecode}\n{translated text}\n\n` for each block
-
-### 6. Write Output
+### 7. Write Output
 
 Write the translated SRT to: `<original_name>.<target_lang_code>.srt`
 
@@ -142,13 +131,13 @@ Place it alongside the original file. Use a short language code for the suffix:
 
 If the original filename already has a language code (e.g., `movie.ja.srt`), replace it. If not, append it.
 
-### 7. Spot Check
+### 8. Spot Check
 
 Read a few sections of the output (beginning, middle, end) to verify:
 - Timecodes are preserved
 - Formatting tags are intact
 - Block structure looks correct
-- Translation quality looks natural
+- Translations are faithful to the Japanese
 
 ## Important Rules
 
@@ -156,5 +145,6 @@ Read a few sections of the output (beginning, middle, end) to verify:
 - **Block count is sacred**: Each subagent MUST return exactly the same number of `---BLOCK_SEP---`-separated blocks as input. Validate after reassembly.
 - **Timecodes are never modified**: Only the text content changes
 - **Formatting tags**: Keep `<i>`, `<b>`, `<font>`, and any other HTML-like tags intact
-- **Natural translation**: Translate how real people actually talk. Avoid 役割語 (yakuwarigo). Don't compress — faithfully recreate the full nuance of the original
-- **Do not proactively check on background agents** — wait for completion notifications or poll the output file count, don't read agent output files
+- **Faithful translation for learning**: These translations help learners understand the Japanese. Prioritize faithfulness over natural English. Don't compress or paraphrase — preserve the full nuance and structure of the original
+- **Do not proactively check on background agents** — wait for completion notifications, don't poll file existence or read agent output files mid-flight
+- **Never pad with placeholders**: If a chunk has the wrong block count, retry the chunk — do not insert `[TRANSLATION MISSING]` or similar filler

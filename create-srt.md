@@ -44,7 +44,7 @@ export ELEVENLABS_API_KEY="<key from user>"
 Upload the video to the ElevenLabs Speech-to-Text API with word-level timestamps and diarization enabled:
 
 ```bash
-curl -X POST "https://api.elevenlabs.io/v1/speech-to-text" \
+curl -s -X POST "https://api.elevenlabs.io/v1/speech-to-text" \
   -H "xi-api-key: $ELEVENLABS_API_KEY" \
   -F "model_id=scribe_v2" \
   -F "file=@video.mp4" \
@@ -53,6 +53,8 @@ curl -X POST "https://api.elevenlabs.io/v1/speech-to-text" \
   -F "diarize=true" \
   > scribe_output.json
 ```
+
+**Important:** The `-s` (silent) flag is required. Without it, curl's progress output gets written into the JSON file and corrupts it.
 
 Files up to 3GB are supported. This can take a few minutes for longer videos.
 
@@ -106,118 +108,14 @@ Key things to know:
 
 BudouX is Google's ML-based line break library for Japanese. It predicts natural phrase (bunsetsu) boundaries, so subtitles never split mid-word.
 
-```python
-import json
-import budoux
+Run the conversion script:
+```bash
+python3 dojo-prompts/scripts/scribe_to_srt.py scribe_output.json output.srt
+```
 
-parser = budoux.parser.load_default_japanese_parser()
-
-with open('scribe_output.json') as f:
-    data = json.load(f)
-
-# -- Build character list, skipping spacing tokens --
-chars = []
-for w in data['words']:
-    if w['type'] == 'spacing':
-        continue
-    chars.append({
-        'text': w['text'],
-        'start': w['start'],
-        'end': w['end'],
-        'is_event': w['type'] == 'audio_event'
-    })
-
-# -- Group into utterances by silence gaps >= 0.4s --
-utterances = []
-current = [chars[0]]
-for c in chars[1:]:
-    gap = c['start'] - current[-1]['end']
-    if gap >= 0.4:
-        utterances.append(current)
-        current = [c]
-    else:
-        current.append(c)
-if current:
-    utterances.append(current)
-
-# -- Build subtitle entries --
-TARGET_CHARS = 20  # aim for this many chars per line
-MAX_CHARS = 35     # never exceed this
-
-srt_entries = []
-
-for utt in utterances:
-    # Audio events (e.g. [音楽]) stay as single entries
-    if len(utt) == 1 and utt[0]['is_event']:
-        srt_entries.append({
-            'start': utt[0]['start'],
-            'end': utt[0]['end'],
-            'text': utt[0]['text']
-        })
-        continue
-
-    # Join characters into full text and find phrase boundaries
-    full_text = ''.join(c['text'] for c in utt)
-    phrases = parser.parse(full_text)
-
-    # Map phrases back to character-level timestamps
-    char_idx = 0
-    phrase_spans = []
-    for phrase in phrases:
-        end_idx = char_idx + len(phrase)
-        phrase_spans.append({
-            'text': phrase,
-            'start': utt[char_idx]['start'],
-            'end': utt[min(end_idx - 1, len(utt) - 1)]['end'],
-        })
-        char_idx = end_idx
-
-    # Accumulate phrases into subtitle lines
-    current_line = []
-    current_len = 0
-
-    for ps in phrase_spans:
-        plen = len(ps['text'])
-        if current_len + plen > MAX_CHARS and current_line:
-            # Would exceed max — flush current line first
-            srt_entries.append({
-                'start': current_line[0]['start'],
-                'end': current_line[-1]['end'],
-                'text': ''.join(p['text'] for p in current_line)
-            })
-            current_line = [ps]
-            current_len = plen
-        elif current_len + plen >= TARGET_CHARS and current_line:
-            # Hit target — include this phrase then flush
-            current_line.append(ps)
-            srt_entries.append({
-                'start': current_line[0]['start'],
-                'end': current_line[-1]['end'],
-                'text': ''.join(p['text'] for p in current_line)
-            })
-            current_line = []
-            current_len = 0
-        else:
-            current_line.append(ps)
-            current_len += plen
-
-    if current_line:
-        srt_entries.append({
-            'start': current_line[0]['start'],
-            'end': current_line[-1]['end'],
-            'text': ''.join(p['text'] for p in current_line)
-        })
-
-# -- Write SRT file --
-def fmt_time(s):
-    h, s = divmod(s, 3600)
-    m, s = divmod(s, 60)
-    ms = int((s % 1) * 1000)
-    return f"{int(h):02d}:{int(m):02d}:{int(s):02d},{ms:03d}"
-
-with open('output.srt', 'w', encoding='utf-8') as f:
-    for i, e in enumerate(srt_entries, 1):
-        f.write(f"{i}\n{fmt_time(e['start'])} --> {fmt_time(e['end'])}\n{e['text']}\n\n")
+Optional flags for tuning:
+```bash
+python3 dojo-prompts/scripts/scribe_to_srt.py scribe_output.json output.srt --target-chars 20 --max-chars 35 --gap-threshold 0.4
 ```
 
 ## Tuning parameters

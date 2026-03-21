@@ -24,16 +24,30 @@ Run `/process-content` and the skill will walk you through the process.
 
 ## Workflow
 
-### 1. Get the source
+### 1. Gather everything up front
 
 Ask the user for a YouTube URL. This can be:
 - A single video
 - A playlist
 - A full channel
 
-### 2. Download with yt-dlp
+Then immediately ask what outputs they want:
 
-Download the video(s) using yt-dlp:
+> I'll download this and create Japanese subtitles. What else would you like?
+>
+> - **English subtitles** — translate the Japanese SRT into English
+> - **Condensed audio** — extract just the spoken audio for passive listening
+> - **Subs2SRS deck** — generate an Anki deck with audio clips and subtitle text
+>
+> You can pick any combination, or none.
+
+Wait for the user to answer before starting any work.
+
+### 2. Run everything
+
+Once you have the URL and know what they want, execute all steps in sequence without further interaction.
+
+**Download** with yt-dlp:
 
 ```bash
 # Single video
@@ -43,46 +57,18 @@ yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(
 yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
 ```
 
-Tell the user:
+**Create Japanese subtitles** — This always runs. Use the **create-srt** skill to transcribe each video with ElevenLabs Scribe v2 and generate SRT files with natural phrase boundaries using BudouX. Read the full skill at `create-srt.md` (in the same directory as this file) and follow its instructions for each video file.
 
-> Downloading your video(s) with yt-dlp...
+**English subtitles** (if selected) — Use the **translate-srt** skill. Read the full skill at `translate-srt.md` (in the same directory as this file) and follow its instructions, translating from Japanese to English.
 
-### 3. Create Japanese subtitles
-
-This step always runs. Use the **create-srt** skill to transcribe each video with ElevenLabs Scribe v2 and generate SRT files with natural phrase boundaries using BudouX.
-
-Tell the user:
-
-> Transcribing the audio with ElevenLabs Scribe v2 and generating Japanese subtitle files...
-
-Read the full create-srt skill at `create-srt.md` (in the same directory as this file) and follow its instructions for each video file.
-
-### 4. Ask what else the user wants
-
-Present the user with these options:
-
-> Your Japanese subtitles are ready. What else would you like me to generate?
->
-> - **English subtitles** — translate the Japanese SRT into English
-> - **Condensed audio** — extract just the spoken audio for passive listening
-> - **Subs2SRS deck** — generate an Anki deck with audio clips and subtitle text
->
-> You can pick any combination, or none.
-
-### 5. Run selected steps
-
-For each option the user selected:
-
-**English subtitles** — Use the **translate-srt** skill. Read the full skill at `translate-srt.md` (in the same directory as this file) and follow its instructions, translating from Japanese to English.
-
-**Condensed audio** — Run subs2cia in condense mode. **You must use [mattvsjapan's fork of subs2cia](https://github.com/mattvsjapan/subs2cia)**, not the original — install with `pip install git+https://github.com/mattvsjapan/subs2cia.git`.
+**Condensed audio** (if selected) — Run subs2cia in condense mode. **You must use [mattvsjapan's fork of subs2cia](https://github.com/mattvsjapan/subs2cia)**, not the original — install with `pip install git+https://github.com/mattvsjapan/subs2cia.git`.
 ```bash
 subs2cia condense -i "*.mp4" -ai <audio_index> -si <subtitle_index> -d out_condense
 ```
 Use the same track indices identified during the create-srt step.
 
-**Subs2SRS deck** — Use the **subs2srs** skill. Read the full skill at `subs2srs.md` (in the same directory as this file) and follow its instructions.
+**Subs2SRS deck** (if selected) — Use the **subs2srs** skill. Read the full skill at `subs2srs.md` (in the same directory as this file) and follow its instructions.
 
-### 6. Report results
+### 3. Report results
 
 Tell the user what was generated and where the output files are.
