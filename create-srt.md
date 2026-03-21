@@ -115,7 +115,7 @@ python3 dojo-prompts/scripts/scribe_to_srt.py scribe_output.json output.srt
 
 Optional flags for tuning:
 ```bash
-python3 dojo-prompts/scripts/scribe_to_srt.py scribe_output.json output.srt --target-chars 20 --max-chars 35 --gap-threshold 0.4
+python3 dojo-prompts/scripts/scribe_to_srt.py scribe_output.json output.srt --max-chars 23 --gap-threshold 0.4
 ```
 
 ### 4. Clean up
@@ -131,10 +131,9 @@ rm scribe_output.json
 | Parameter | Default | Effect |
 |-----------|---------|--------|
 | Gap threshold | 0.4s | Silence duration that splits utterances. Lower = more splits between phrases. Higher = longer unbroken runs. |
-| `TARGET_CHARS` | 20 | Preferred line length. Lines are flushed once they reach this. |
-| `MAX_CHARS` | 35 | Hard cap. Lines are force-flushed before exceeding this, even mid-phrase-group. |
+| `MAX_CHARS` | 25 | Max characters per line. Both lines in a two-line entry share this cap. Lower = shorter, more frequent subtitles. |
 
-For denser subtitles (e.g. a lecture), increase `TARGET_CHARS` to 25-30. For fast-paced dialogue, decrease to 15-18.
+For denser subtitles (e.g. a lecture), increase `MAX_CHARS` to 28-30. For fast-paced dialogue, decrease to 20.
 
 ## Alternative: stable-ts
 

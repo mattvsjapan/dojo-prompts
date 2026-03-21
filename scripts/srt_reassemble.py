@@ -64,10 +64,39 @@ for chunk in chunks:
     else:
         all_texts.extend(blocks)
 
+def balance_lines(text):
+    """Split text into two balanced lines at a word boundary."""
+    words = text.split(' ')
+    if len(words) < 2:
+        return text
+    best_split = 1
+    best_diff = float('inf')
+    for k in range(1, len(words)):
+        top = ' '.join(words[:k])
+        bot = ' '.join(words[k:])
+        diff = abs(len(top) - len(bot))
+        if diff < best_diff:
+            best_diff = diff
+            best_split = k
+    return ' '.join(words[:best_split]) + '\n' + ' '.join(words[best_split:])
+
+# Read original SRT to check which blocks were two-line
+original_srt_path = os.path.join(work_dir, 'original_line_counts.json')
+original_two_line = set()
+if os.path.isfile(original_srt_path):
+    with open(original_srt_path, encoding='utf-8') as f:
+        original_two_line = set(json.load(f))
+
 # Write SRT
 with open(output_srt_path, 'w', encoding='utf-8') as f:
     for i, meta in enumerate(metadata):
         text = all_texts[i] if i < len(all_texts) else ''
+        # Split on em dash — this indicates a speaker change mid-line
+        if ' — ' in text:
+            text = text.replace(' — ', '\n')
+        # Balance into two lines if the original Japanese block was two lines
+        elif i in original_two_line and '\n' not in text:
+            text = balance_lines(text)
         f.write(f'{meta["index"]}\n{meta["timecode"]}\n{text}\n\n')
 
 errors = missing + failed

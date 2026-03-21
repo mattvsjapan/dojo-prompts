@@ -53,6 +53,11 @@ metadata = [{'index': b['index'], 'timecode': b['timecode']} for b in blocks]
 with open(os.path.join(output_dir, 'metadata.json'), 'w', encoding='utf-8') as f:
     json.dump(metadata, f, ensure_ascii=False)
 
+# Save which blocks have two lines (so reassembly can balance translated text)
+two_line_blocks = [i for i, b in enumerate(blocks) if '\n' in b['text']]
+with open(os.path.join(output_dir, 'original_line_counts.json'), 'w', encoding='utf-8') as f:
+    json.dump(two_line_blocks, f)
+
 # Split into chunks and write input files
 context_size = 5
 chunks_info = []
@@ -72,7 +77,9 @@ for chunk_id, start in enumerate(range(0, len(blocks), chunk_size)):
     ctx_after_text = '\n\n'.join(b['text'] for b in ctx_after) if ctx_after else ''
 
     # Build chunk input file
-    translate_text = '\n---BLOCK_SEP---\n'.join(b['text'] for b in chunk_blocks)
+    # Flatten multi-line blocks into single lines for translation —
+    # line balancing is applied during reassembly, not by the translator.
+    translate_text = '\n---BLOCK_SEP---\n'.join(b['text'].replace('\n', ' ') for b in chunk_blocks)
 
     input_path = os.path.join(output_dir, f'chunk_{chunk_id}_input.txt')
     output_path = os.path.join(output_dir, f'chunk_{chunk_id}_output.txt')

@@ -60,7 +60,7 @@ Then run the split script:
 python3 dojo-prompts/scripts/srt_split.py <srt_file_path>
 ```
 
-This parses the SRT, saves `metadata.json` and `chunks.json` to `/tmp/translate-srt/`, and writes chunk input files with context sections and `---BLOCK_SEP---` separators.
+This parses the SRT, saves `metadata.json`, `chunks.json`, and `original_line_counts.json` to `/tmp/translate-srt/`, and writes chunk input files with context sections and `---BLOCK_SEP---` separators. Multi-line blocks are flattened to single lines for translation — line balancing is applied during reassembly.
 
 ### 3. Verify Split Output
 
@@ -117,7 +117,7 @@ Run the reassembly script:
 python3 dojo-prompts/scripts/srt_reassemble.py <output_srt_path>
 ```
 
-This reads the chunk outputs from `/tmp/translate-srt/`, validates block counts, and writes the final SRT. Small block count differences (≤10%) are accepted — the LLM sometimes merges short subtitle blocks and that's fine. The script only fails (exit code 1) if a chunk file is missing or has a large mismatch (>10%), which indicates content was actually dropped.
+This reads the chunk outputs from `/tmp/translate-srt/`, validates block counts, and writes the final SRT. It also re-balances translated text into two lines (at word boundaries) for blocks that were two-line in the original SRT, and splits on em dashes (` — `) which indicate speaker changes. Small block count differences (≤10%) are accepted — the LLM sometimes merges short subtitle blocks and that's fine. The script only fails (exit code 1) if a chunk file is missing or has a large mismatch (>10%), which indicates content was actually dropped.
 
 **If reassembly fails**, re-launch subagents for only the failed chunks (same prompt, same parameters). Re-run reassembly after they complete. Continue retrying until reassembly succeeds or you've retried 3 times, then report any remaining failures to the user.
 
