@@ -117,7 +117,7 @@ Run the reassembly script:
 python3 dojo-prompts/scripts/srt_reassemble.py <output_srt_path>
 ```
 
-This reads the chunk outputs from `/tmp/translate-srt/`, validates block counts, and writes the final SRT. It also re-balances translated text into two lines (at word boundaries) for blocks that were two-line in the original SRT, and splits on em dashes (` — `) which indicate speaker changes. Small block count differences (≤10%) are accepted — the LLM sometimes merges short subtitle blocks and that's fine. The script only fails (exit code 1) if a chunk file is missing or has a large mismatch (>10%), which indicates content was actually dropped.
+This reads the chunk outputs from `/tmp/translate-srt/`, validates block counts, and writes the final SRT. It also re-balances translated text into two lines (at word boundaries) for blocks that were two-line in the original SRT, and splits on em dashes (` — `) which indicate speaker changes. The script requires an **exact** block count match for every chunk — even a single dropped or merged block causes timecode misalignment for all subsequent blocks in that chunk. Any mismatch causes a failure exit (code 1) with the failing chunk IDs printed to stderr.
 
 **If reassembly fails**, re-launch subagents for only the failed chunks (same prompt, same parameters). Re-run reassembly after they complete. Continue retrying until reassembly succeeds or you've retried 3 times, then report any remaining failures to the user.
 
@@ -142,9 +142,9 @@ Read a few sections of the output (beginning, middle, end) to verify:
 ## Important Rules
 
 - **Never read the full SRT into main context** — always use Python scripts to handle file I/O on disk
-- **Block count**: Small differences from merging short blocks are fine. Only retry if a chunk is >10% off (indicating dropped content).
+- **Block count must be exact**: Any mismatch (even off by one) causes timecode misalignment for all subsequent blocks in that chunk. Always retry mismatched chunks — never pad or accept partial results.
 - **Timecodes are never modified**: Only the text content changes
 - **Formatting tags**: Keep `<i>`, `<b>`, `<font>`, and any other HTML-like tags intact
 - **Faithful translation for learning**: These translations help learners understand the Japanese. Prioritize faithfulness over natural English. Don't compress or paraphrase — preserve the full nuance and structure of the original
 - **Do not proactively check on background agents** — wait for completion notifications, don't poll file existence or read agent output files mid-flight
-- **Never pad with placeholders**: If a chunk has the wrong block count, retry the chunk — do not insert `[TRANSLATION MISSING]` or similar filler
+- **Never pad with placeholders**: If a chunk has the wrong block count, retry the chunk — do not insert `[TRANSLATION MISSING]` or similar filler. Even a single dropped block shifts all subsequent timecodes

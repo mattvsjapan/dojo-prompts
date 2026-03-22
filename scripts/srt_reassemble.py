@@ -45,19 +45,10 @@ for chunk in chunks:
     blocks = content.split('---BLOCK_SEP---')
     blocks = [b.strip() for b in blocks]
 
-    diff = abs(len(blocks) - expected)
-    threshold = max(2, int(expected * 0.10))
-
-    if diff > threshold:
-        # Large mismatch — something went seriously wrong
+    if len(blocks) != expected:
         failed.append(chunk['chunk_id'])
-        print(f'Chunk {chunk["chunk_id"]}: expected {expected} blocks, got {len(blocks)} (>{threshold} off — likely dropped content)', file=sys.stderr)
-        all_texts.extend(blocks[:expected])
-        if len(blocks) < expected:
-            all_texts.extend([''] * (expected - len(blocks)))
-    elif diff > 0:
-        # Small mismatch — probably just merged short blocks, that's fine
-        print(f'Chunk {chunk["chunk_id"]}: expected {expected} blocks, got {len(blocks)} (minor, accepted)', file=sys.stderr)
+        print(f'Chunk {chunk["chunk_id"]}: expected {expected} blocks, got {len(blocks)} — needs retry', file=sys.stderr)
+        # Pad to keep indices aligned for any chunks that did succeed
         all_texts.extend(blocks[:expected])
         if len(blocks) < expected:
             all_texts.extend([''] * (expected - len(blocks)))
