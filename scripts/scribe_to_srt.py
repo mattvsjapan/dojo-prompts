@@ -23,12 +23,15 @@ scribe_json = sys.argv[1]
 output_srt = sys.argv[2]
 
 max_chars = 25
+max_total = 35
 gap_threshold = 0.4
 
 args = sys.argv[3:]
 for i, arg in enumerate(args):
     if arg == '--max-chars' and i + 1 < len(args):
         max_chars = int(args[i + 1])
+    elif arg == '--max-total' and i + 1 < len(args):
+        max_total = int(args[i + 1])
     elif arg == '--gap-threshold' and i + 1 < len(args):
         gap_threshold = float(args[i + 1])
 
@@ -121,17 +124,29 @@ def flush_entry():
         return
     phrases = line1 + line2
 
-    # If there are 2+ phrases and the entry would be two lines,
-    # find the split point that makes both lines closest to equal length.
+    # Determine if the entry needs two lines and where to split.
     total_len = sum(len(p['text']) for p in phrases)
-    if len(phrases) >= 2 and total_len > max_chars:
+
+    # Check if any phrase ends with a comma — force split there
+    comma_split = None
+    if len(phrases) >= 2:
+        for k in range(len(phrases) - 1):
+            if phrases[k]['text'][-1] in '、,':
+                comma_split = k + 1
+                break  # split at first comma
+
+    if comma_split is not None:
+        top = ''.join(p['text'] for p in phrases[:comma_split])
+        bot = ''.join(p['text'] for p in phrases[comma_split:])
+        text = top + '\n' + bot if bot else top
+    elif len(phrases) >= 2 and total_len > max_chars:
+        # No comma — balance by equal length
         best_split = 1
         best_diff = float('inf')
         running = 0
         for k in range(len(phrases)):
             running += len(phrases[k]['text'])
             remainder = total_len - running
-            # Both lines must fit within max_chars
             if running <= max_chars and remainder <= max_chars:
                 diff = abs(running - remainder)
                 if diff < best_diff:
@@ -174,18 +189,25 @@ for ps in all_phrases:
         flush_entry()
         current_speaker = ps['speaker']
 
-    # Try to fit on line 1, then line 2 (same max_chars cap for both)
+    # Try to fit on line 1, then line 2 (same max_chars cap per line,
+    # max_total cap across both lines combined)
+    total_len = line1_len + line2_len
     if not line2:
         if line1_len + plen <= max_chars or not line1:
             line1.append(ps)
             line1_len += plen
-        else:
-            # Line 1 full — start line 2
+        elif total_len + plen <= max_total:
+            # Line 1 full but total still under cap — start line 2
             line2.append(ps)
             line2_len += plen
+        else:
+            # Would exceed total cap — flush and start new entry
+            flush_entry()
+            line1.append(ps)
+            line1_len += plen
     else:
-        if line2_len + plen > max_chars:
-            # Line 2 full — flush and start new entry
+        if line2_len + plen > max_chars or total_len + plen > max_total:
+            # Line 2 full or total exceeded — flush and start new entry
             flush_entry()
             line1.append(ps)
             line1_len += plen
@@ -196,6 +218,17 @@ for ps in all_phrases:
     # Sentence boundary — flush after this phrase
     if ends_sentence:
         flush_entry()
+        continue
+
+    # Comma forces a line break: wrap to line 2 if on line 1,
+    # or flush the entry if already on line 2.
+    ends_comma = ps['text'][-1] in '、,' if ps['text'] else False
+    if ends_comma:
+        if line2:
+            flush_entry()
+        else:
+            # Force next phrase onto line 2 by marking line 1 as full
+            line1_len = max_chars
 
     current_speaker = ps['speaker']
 
