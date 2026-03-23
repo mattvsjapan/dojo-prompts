@@ -95,14 +95,7 @@ python3 dojo-prompts/scripts/srt_watch.py -o <video_stem> <json_file_path>
 
 **English subtitles** (if selected) — Use the **translate-srt** skill. Read the full skill at `translate-srt.md` (in the same directory as this file) and follow its instructions, passing the Scribe JSON file. Use `-o` to name the output after the video file (not the JSON). The intermediate Japanese `.translate.srt` should be deleted after translation is complete.
 
-**Condensed audio** (if selected) — Run subs2cia in condense mode. **You must use [mattvsjapan's fork of subs2cia](https://github.com/mattvsjapan/subs2cia)**, not the original — install/upgrade with `pip install --upgrade git+https://github.com/mattvsjapan/subs2cia.git`. Prefer the Scribe JSON as the timing source (more accurate speech gaps); fall back to SRT only if no JSON is available.
-```bash
-# With JSON (preferred)
-subs2cia condense -i "video.mp4" "scribe_output.json" -t 1500 -p 200 --no-gen-subtitle -d out_condense
-
-# Fallback: with SRT
-subs2cia condense -i "video.mp4" -si <subtitle_index> --no-gen-subtitle -d out_condense
-```
+**Condensed audio** (if selected) — Use the **condensed-audio** skill. Read the full skill at `condensed-audio.md` (in the same directory as this file) and follow its instructions.
 
 **Anki deck** (if selected) — Use the **anki** skill. Read the full skill at `anki.md` (in the same directory as this file) and follow its instructions.
 
