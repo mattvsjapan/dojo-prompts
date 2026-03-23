@@ -14,6 +14,7 @@ When the user asks about any of the following, read the corresponding skill file
 | "translate subtitles", "translate this SRT", "make English subs" | `dojo-prompts/translate-srt.md` |
 | "make an Anki deck", "subs2srs", "create flashcards" | `dojo-prompts/anki.md` |
 | "style guide", "language parent", "analyze their speech" | `dojo-prompts/style-guide.md` |
+| "condensed audio", "condense this", "passive listening" | See condensed audio instructions below |
 | "download a video", "download this" | Use yt-dlp (see below) |
 
 When a skill is triggered, read the full skill file first, then follow its workflow step by step.
@@ -62,5 +63,12 @@ If a required tool is missing, just install it and move on. No need to ask — b
   # e.g. 「機械オンチに「API」を説明する動画」→ kikai_onchi_ni_api_wo_setsumei_suru_douga_01.mp4
   ```
 - **subs2cia**: Any step that uses subs2cia must use [mattvsjapan's fork](https://github.com/mattvsjapan/subs2cia). Install with: `pip install git+https://github.com/mattvsjapan/subs2cia.git`
+- **Condensed audio**: Use subs2cia in condense mode. **Always prefer a Scribe JSON file over an SRT** — JSON gives more accurate speech gap detection. Look for a `.json` file alongside the video before falling back to SRT.
+  ```bash
+  # With JSON (preferred)
+  subs2cia condense -i "video.mp4" "video.json" -t 1500 -p 200 --no-gen-subtitle -d out_condense
+  # Fallback: with SRT
+  subs2cia condense -i "video.mp4" -si <subtitle_index> --no-gen-subtitle -d out_condense
+  ```
 - **ElevenLabs API key**: If `$ELEVENLABS_API_KEY` is not set, ask the user to paste their key before transcribing.
 - **Primed Listening**: `dojo-prompts/primed-listening.lua` is an mpv script, not an AI skill. To install it, copy it to `~/.config/mpv/scripts/`.
