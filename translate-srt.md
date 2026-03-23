@@ -43,32 +43,28 @@ This keeps the main context lean (only metadata + status messages).
 ### 1. Gather Inputs
 
 Determine:
-- **SRT file path** — from argument or ask the user
-- **Source language** — from argument, or read just the first ~30 lines to auto-detect
+- **Input file** — look for a Scribe JSON file (`.json`) first, then fall back to an existing SRT. **Always prefer JSON over SRT** — the JSON produces better translation cues via `srt_translate.py` because it has access to the full bunsetsu segmentation pipeline. Only use an existing SRT if no JSON is available.
+- **Source language** — from argument, or read just the first ~30 lines of the SRT to auto-detect
 - **Target language** — from argument or ask the user
 - **Translation style notes** — ask if the user has specific preferences (though the default is faithful/literal for language learning)
 
-### 2. Split with Python
+### 2. Generate the translate SRT and split
 
 **First, delete and recreate `/tmp/translate-srt/`** to ensure a clean slate — stale chunk files from previous runs will cause agents to translate wrong data:
 ```bash
 rm -rf /tmp/translate-srt && mkdir -p /tmp/translate-srt
 ```
 
-Then run the split script:
+**If starting from a JSON file (preferred):** Generate the translate SRT first, then split it. Use `-o` to name the output after the video file:
+```bash
+python3 dojo-prompts/scripts/srt_translate.py -o <video_stem> <json_file_path>
+python3 dojo-prompts/scripts/srt_split.py <video_stem>.translate.srt
+```
+
+**If starting from an existing SRT (fallback):** Split it directly:
 ```bash
 python3 dojo-prompts/scripts/srt_split.py <srt_file_path>
 ```
-
-If the user provides an ElevenLabs Scribe JSON file instead of an SRT, first generate the translate SRT. Use `-o` to name the output after the original video file (not the JSON):
-```bash
-python3 dojo-prompts/scripts/srt_translate.py -o <video_stem> <json_file_path>
-```
-For example, if the video is `kikai_onchi_api_01.mp4` and the JSON is `scribe_output 22.29.33.json`:
-```bash
-python3 dojo-prompts/scripts/srt_translate.py -o kikai_onchi_api_01 "scribe_output 22.29.33.json"
-```
-This produces `kikai_onchi_api_01.translate.srt`, which then becomes the input for the split script.
 
 This parses the SRT, saves `metadata.json`, `chunks.json`, and `original_line_counts.json` to `/tmp/translate-srt/`, and writes chunk input files with context sections and `---BLOCK_SEP---` separators. Multi-line blocks are flattened to single lines for translation — line balancing is applied during reassembly.
 
