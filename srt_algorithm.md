@@ -1,10 +1,12 @@
 # SRT Algorithm Design
 
-This document explains the subtitle generation pipeline in `scripts/srt_common.py`, `scripts/srt_watch.py`, `scripts/srt_anki.py`, and `scripts/srt_translate.py`. It converts ElevenLabs Scribe JSON (character-level timestamps for Japanese) into SRT subtitles with natural line breaks.
+This document explains the subtitle generation pipeline in `scripts/srt_common.py`, `scripts/srt_watch.py`, and `scripts/srt_translate.py`. It converts ElevenLabs Scribe JSON (character-level timestamps for Japanese) into SRT subtitles with natural line breaks.
 
-The script produces **two variants** from the same bunsetsu data:
+The same bunsetsu segmentation and Anki sentence-splitting algorithm is also built directly into [mattvsjapan's fork of subs2cia](https://github.com/mattvsjapan/subs2cia), which uses it for JSON-based SRS card generation.
+
+The scripts produce **two SRT variants** from the same bunsetsu data:
 - **Watch** — optimized for reading subtitles while watching video (short lines, timing-aware pairing)
-- **Anki** — optimized for flashcard creation (one sentence per cue, no line length limits)
+- **Translate** — merged sentence blocks optimized for translation by LLMs
 
 ## Input
 
@@ -15,9 +17,9 @@ ElevenLabs returns **character-level** timestamps for Japanese — each characte
 The pipeline follows a "split maximally, then merge" philosophy. Stage 1 is shared; the variants diverge after that.
 
 ```
-                    ┌→ Segments → Lines → Cues → Watch SRT/HTML
+                    ┌→ Segments → Lines → Cues → Watch SRT
 Characters → Bunsetsu
-                    └→ Anki Cues → Anki SRT/HTML
+                    └→ Anki Cues → Translate Cues → Translate SRT
 ```
 
 Each stage is described below.
@@ -98,20 +100,25 @@ When pairing, these guards must also pass:
 - `。` is stripped from line ends only (mid-line `。` retained, though the pipeline should prevent these)
 - Cue end times are extended by 0.5s (CUE_LINGER), capped at the next cue's start time, so subtitles don't disappear the instant speech ends
 
-## Anki Variant
+## Anki Sentence Segmentation
 
-The Anki variant takes a completely different path from the shared bunsetsu data. Instead of the segment → line → cue pipeline, it builds cues directly from bunsetsu with sentence-level grouping.
+The Anki sentence-splitting algorithm is used in two places:
+- In `srt_common.py` (`bunsetsu_to_anki_cues()`) — used as the basis for the translate variant
+- Directly in [mattvsjapan's fork of subs2cia](https://github.com/mattvsjapan/subs2cia) — used for JSON-based SRS card generation (one card per sentence)
+
+The algorithm takes a completely different path from the watch variant. Instead of the segment → line → cue pipeline, it builds cues directly from bunsetsu with sentence-level grouping.
 
 ### Sentence Splitting
 
 Bunsetsu are accumulated into a cue until a split point is reached:
 - **Sentence-ending punctuation** (。！？) — always starts a new cue
 - **Speaker changes** — always starts a new cue
+- **Time gaps ≥ 0.4s** (MERGE_GAP_LIMIT) — always starts a new cue
 - **Commas** (、) — conditionally starts a new cue (see below)
 
 ### Comma Splitting
 
-Long sentences without periods would produce unwieldy Anki cards. Commas are used as secondary split points, but only when the cue is long enough:
+Long sentences without periods would produce unwieldy cards. Commas are used as secondary split points, but only when the cue is long enough:
 
 - At a comma, if the current cue has **≥ 5 MeCab tokens**, split into a new cue
 - **Orphan protection:** Do NOT split if BOTH conditions are true:
@@ -184,14 +191,16 @@ Install: `pip install fugashi unidic-lite`
 
 ```bash
 python3.11 scripts/srt_watch.py <elevenlabs_scribe.json>
-python3.11 scripts/srt_anki.py <elevenlabs_scribe.json>
 python3.11 scripts/srt_translate.py <elevenlabs_scribe.json>
 ```
 
+Pass `--html` to either script to also generate an HTML debug visualization.
+
 Outputs:
 - `<name>.srt` — watch subtitle file
-- `<name>_cues.html` — watch visual debug view with bunsetsu boundaries, speaker colors, and timing info
-- `<name>.anki.srt` — Anki subtitle file (sentence-level cues)
-- `<name>_anki.html` — Anki visual debug view
 - `<name>.translate.srt` — translate subtitle file (merged cues for translation pipeline)
-- `<name>_translate.html` — translate visual debug view
+
+Anki card generation is handled directly by subs2cia:
+```bash
+subs2cia srs -i video.mp4 scribe_output.json -p 500 -N -d out_srs --export-header-row
+```
