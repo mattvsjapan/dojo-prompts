@@ -58,13 +58,22 @@ yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(
 yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
 ```
 
-**Sanitize filenames** — YouTube titles often contain Unicode characters (fraction slashes ⧸, fullwidth punctuation ＆, etc.) that break tools like curl. After downloading, rename files to use only ASCII letters, numbers, underscores, and hyphens:
+**Sanitize and rename** — YouTube titles often contain Unicode characters (fraction slashes ⧸, fullwidth punctuation ＆, etc.) that break tools like curl. Rename files to a standardized format **before any processing** so all outputs (SRT, condensed audio, Anki deck) share consistent filenames. Ask the user for a show name, then rename:
 ```bash
-for f in *.mp4; do
-  safe=$(echo "$f" | sed 's/[^a-zA-Z0-9._-]/_/g' | sed 's/__*/_/g' | sed 's/^_//;s/_\./\./')
-  [ "$f" != "$safe" ] && mv "$f" "$safe"
+SHOW_NAME="<show_name>"  # e.g. "goldman_sachs_money_mate"
+# Single video
+mv *.mp4 "${SHOW_NAME}_01.mp4"
+# Multiple videos (playlist/channel)
+i=1; for f in *.mp4; do
+  num=$(printf "%02d" $i)
+  mv "$f" "${SHOW_NAME}_${num}.mp4"
+  i=$((i + 1))
 done
 ```
+
+Rules for `<show_name>`: all lowercase, underscores for spaces, include season/year if relevant (e.g., `oshi_no_ko_s2`).
+
+**IMPORTANT:** This rename must happen before transcription, condensed audio, or any other processing. subs2cia and other tools name their outputs after the input file — if you process before renaming, outputs will have mismatched names.
 
 **Transcribe** — This always runs. Use the **create-srt** skill's steps 1-2 to transcribe each video with ElevenLabs Scribe v2 and produce the Scribe JSON file. Read `create-srt.md` (in the same directory as this file). The JSON is the foundation for all other outputs.
 
