@@ -33,13 +33,14 @@ Ask the user for a YouTube URL. This can be:
 
 Then immediately ask what outputs they want:
 
-> I'll download this and create Japanese subtitles. What else would you like?
+> I'll download this and transcribe it. What would you like me to generate?
 >
-> - **English subtitles** — translate the Japanese SRT into English
+> - **Japanese subtitles** — SRT with natural bunsetsu line breaks for watching
+> - **English subtitles** — translated SRT for language learning reference
 > - **Condensed audio** — extract just the spoken audio for passive listening
-> - **Subs2SRS deck** — generate an Anki deck with audio clips and subtitle text
+> - **Anki deck** — generate flashcards with audio clips and subtitle text
 >
-> You can pick any combination, or none.
+> You can pick any combination.
 
 Wait for the user to answer before starting any work.
 
@@ -57,17 +58,15 @@ yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(
 yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
 ```
 
-**Create Japanese subtitles** — This always runs. Use the **create-srt** skill to transcribe each video with ElevenLabs Scribe v2 and generate SRT files with natural bunsetsu boundaries using MeCab. Read the full skill at `create-srt.md` (in the same directory as this file) and follow its instructions for each video file.
+**Transcribe** — This always runs. Use the **create-srt** skill's steps 1-2 to transcribe each video with ElevenLabs Scribe v2 and produce the Scribe JSON file. Read `create-srt.md` (in the same directory as this file). The JSON is the foundation for all other outputs.
 
-**English subtitles** (if selected) — Use the **translate-srt** skill. Read the full skill at `translate-srt.md` (in the same directory as this file) and follow its instructions, translating from Japanese to English.
+**Japanese subtitles** (if selected) — Run `srt_watch.py` on the JSON to generate watch-optimized SRT files. See step 3 in `create-srt.md`.
 
-**Condensed audio** (if selected) — Run subs2cia in condense mode. **You must use [mattvsjapan's fork of subs2cia](https://github.com/mattvsjapan/subs2cia)**, not the original — install with `pip install git+https://github.com/mattvsjapan/subs2cia.git`.
-```bash
-subs2cia condense -i "*.mp4" -ai <audio_index> -si <subtitle_index> -d out_condense
-```
-Use the same track indices identified during the create-srt step.
+**English subtitles** (if selected) — Use the **translate-srt** skill. Read the full skill at `translate-srt.md` (in the same directory as this file) and follow its instructions, passing the Scribe JSON file. The intermediate Japanese `.translate.srt` is cleaned up automatically.
 
-**Subs2SRS deck** (if selected) — Use the **anki** skill. Read the full skill at `anki.md` (in the same directory as this file) and follow its instructions.
+**Condensed audio** (if selected) — Run subs2cia in condense mode, passing the Scribe JSON directly. **You must use [mattvsjapan's fork of subs2cia](https://github.com/mattvsjapan/subs2cia)**, not the original — install/upgrade with `pip install --upgrade git+https://github.com/mattvsjapan/subs2cia.git`.
+
+**Anki deck** (if selected) — Use the **anki** skill. Read the full skill at `anki.md` (in the same directory as this file) and follow its instructions.
 
 ### 3. Report results
 
