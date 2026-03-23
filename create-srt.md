@@ -51,8 +51,10 @@ curl -s -X POST "https://api.elevenlabs.io/v1/speech-to-text" \
   -F "language_code=ja" \
   -F "timestamps_granularity=word" \
   -F "diarize=true" \
-  > scribe_output.json
+  > video.json
 ```
+
+Name the JSON output after the video file (e.g., `kikai_onchi_01.mp4` → `kikai_onchi_01.json`) so all outputs share a consistent basename.
 
 **Important:** The `-s` (silent) flag is required. Without it, curl's progress output gets written into the JSON file and corrupts it.
 
