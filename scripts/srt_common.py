@@ -181,6 +181,10 @@ def load_chars(json_path: str) -> list[CharToken]:
         speaker = w["speaker_id"]
 
         if len(text) == 1:
+            # Clamp sentence-ending punctuation — ElevenLabs often assigns
+            # long silence after a sentence to the punctuation's end time
+            if text in SENTENCE_ENDERS and end - start > 0.2:
+                end = start + 0.1
             chars.append(CharToken(text=text, start=start, end=end, speaker=speaker))
         else:
             # Split multi-char tokens, interpolate timing

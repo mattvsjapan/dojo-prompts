@@ -72,10 +72,12 @@ def bunsetsu_to_segments(bunsetsu_list: list[Bunsetsu]) -> list[Segment]:
     segments: list[Segment] = []
     for seg in clause_split:
         prev_has_period = segments and "。" in segments[-1].text
+        prev_gap = seg.start - segments[-1].end if segments else 0
         if (segments
                 and seg.char_count < MIN_SEGMENT_CHARS
                 and seg.speaker == segments[-1].speaker
-                and not prev_has_period):
+                and not prev_has_period
+                and prev_gap < MERGE_GAP_LIMIT):
             combined_bunsetsu = segments[-1].bunsetsu + seg.bunsetsu
             combined_chars = segments[-1].char_count + seg.char_count
             if combined_chars <= LINE_CHAR_LIMIT:
