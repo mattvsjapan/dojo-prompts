@@ -108,12 +108,12 @@ Key things to know:
 
 MeCab with UniDic segments Japanese text into bunsetsu (phrase units), so subtitles break at natural grammatical boundaries.
 
-Run the conversion script:
+Run the conversion script, using `-o` to name the output after the video file:
 ```bash
-python3 dojo-prompts/scripts/srt_watch.py scribe_output.json
+python3 dojo-prompts/scripts/srt_watch.py -o <video_stem> scribe_output.json
 ```
 
-This produces `scribe_output.srt` alongside the JSON file.
+This produces `<video_stem>.srt` alongside the JSON file.
 
 ### 4. Preserve the JSON
 

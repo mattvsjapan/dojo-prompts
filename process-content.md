@@ -60,7 +60,10 @@ yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(
 
 **Transcribe** — This always runs. Use the **create-srt** skill's steps 1-2 to transcribe each video with ElevenLabs Scribe v2 and produce the Scribe JSON file. Read `create-srt.md` (in the same directory as this file). The JSON is the foundation for all other outputs.
 
-**Japanese subtitles** (if selected) — Run `srt_watch.py` on the JSON to generate watch-optimized SRT files. See step 3 in `create-srt.md`.
+**Japanese subtitles** (if selected) — Run `srt_watch.py` on the JSON with `-o` to name the output after the video file:
+```bash
+python3 dojo-prompts/scripts/srt_watch.py -o <video_stem> <json_file_path>
+```
 
 **English subtitles** (if selected) — Use the **translate-srt** skill. Read the full skill at `translate-srt.md` (in the same directory as this file) and follow its instructions, passing the Scribe JSON file. Use `-o` to name the output after the video file (not the JSON). The intermediate Japanese `.translate.srt` should be deleted after translation is complete.
 
