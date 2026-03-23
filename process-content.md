@@ -67,7 +67,7 @@ subs2cia condense -i "*.mp4" -ai <audio_index> -si <subtitle_index> -d out_conde
 ```
 Use the same track indices identified during the create-srt step.
 
-**Subs2SRS deck** (if selected) — Use the **subs2srs** skill. Read the full skill at `subs2srs.md` (in the same directory as this file) and follow its instructions.
+**Subs2SRS deck** (if selected) — Use the **anki** skill. Read the full skill at `anki.md` (in the same directory as this file) and follow its instructions.
 
 ### 3. Report results
 

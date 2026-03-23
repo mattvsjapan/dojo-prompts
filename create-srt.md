@@ -110,21 +110,14 @@ BudouX is Google's ML-based line break library for Japanese. It predicts natural
 
 Run the conversion script:
 ```bash
-python3 dojo-prompts/scripts/scribe_to_srt.py scribe_output.json output.srt
+python3 dojo-prompts/scripts/srt_watch.py scribe_output.json
 ```
 
-Optional flags for tuning:
-```bash
-python3 dojo-prompts/scripts/scribe_to_srt.py scribe_output.json output.srt --max-chars 23 --gap-threshold 0.4
-```
+This produces `scribe_output.srt` alongside the JSON file.
 
-### 4. Clean up
+### 4. Preserve the JSON
 
-Delete the intermediate JSON file after the SRT has been successfully created:
-
-```bash
-rm scribe_output.json
-```
+**Do NOT delete the Scribe JSON file.** It is needed by other workflows (Anki deck generation, English translation). Only the SRT is the final output of this skill, but the JSON must be kept.
 
 ## Tuning parameters
 

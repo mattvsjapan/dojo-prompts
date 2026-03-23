@@ -60,6 +60,11 @@ Then run the split script:
 python3 dojo-prompts/scripts/srt_split.py <srt_file_path>
 ```
 
+If the user provides an ElevenLabs Scribe JSON file instead of an SRT, first generate the translate SRT:
+```bash
+python3 dojo-prompts/scripts/srt_translate.py <json_file_path>
+```
+
 This parses the SRT, saves `metadata.json`, `chunks.json`, and `original_line_counts.json` to `/tmp/translate-srt/`, and writes chunk input files with context sections and `---BLOCK_SEP---` separators. Multi-line blocks are flattened to single lines for translation — line balancing is applied during reassembly.
 
 ### 3. Verify Split Output
@@ -132,7 +137,17 @@ Place it alongside the original file. Use a short language code for the suffix:
 
 If the original filename already has a language code (e.g., `movie.ja.srt`), replace it. If not, append it.
 
-### 8. Spot Check
+### 8. Clean Up Intermediate SRT
+
+If the input was an ElevenLabs Scribe JSON file (not an existing SRT), the `srt_translate.py` script generated an intermediate `.translate.srt` file. Delete it — only the translated `.en.srt` should remain:
+
+```bash
+rm <json_stem>.translate.srt
+```
+
+**Do NOT delete the Scribe JSON file** — it may be needed by other workflows.
+
+### 9. Spot Check
 
 Read a few sections of the output (beginning, middle, end) to verify:
 - Timecodes are preserved

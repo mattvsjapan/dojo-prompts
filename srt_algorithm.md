@@ -1,6 +1,6 @@
-# elevenlabs_to_srt.py — Algorithm Design
+# SRT Algorithm Design
 
-This document explains the subtitle generation pipeline in `elevenlabs_to_srt.py`. It converts ElevenLabs Scribe JSON (character-level timestamps for Japanese) into SRT subtitles with natural line breaks.
+This document explains the subtitle generation pipeline in `scripts/srt_common.py`, `scripts/srt_watch.py`, `scripts/srt_anki.py`, and `scripts/srt_translate.py`. It converts ElevenLabs Scribe JSON (character-level timestamps for Japanese) into SRT subtitles with natural line breaks.
 
 The script produces **two variants** from the same bunsetsu data:
 - **Watch** — optimized for reading subtitles while watching video (short lines, timing-aware pairing)
@@ -183,7 +183,9 @@ Install: `pip install fugashi unidic-lite`
 ## Usage
 
 ```bash
-python3.11 elevenlabs_to_srt.py <elevenlabs_scribe.json>
+python3.11 scripts/srt_watch.py <elevenlabs_scribe.json>
+python3.11 scripts/srt_anki.py <elevenlabs_scribe.json>
+python3.11 scripts/srt_translate.py <elevenlabs_scribe.json>
 ```
 
 Outputs:

@@ -12,7 +12,7 @@ When the user asks about any of the following, read the corresponding skill file
 | "process this video", "download and transcribe", "process content" | `dojo-prompts/process-content.md` |
 | "create subtitles", "transcribe this", "make an SRT", "generate subs" | `dojo-prompts/create-srt.md` |
 | "translate subtitles", "translate this SRT", "make English subs" | `dojo-prompts/translate-srt.md` |
-| "make an Anki deck", "subs2srs", "create flashcards" | `dojo-prompts/subs2srs.md` |
+| "make an Anki deck", "subs2srs", "create flashcards" | `dojo-prompts/anki.md` |
 | "style guide", "language parent", "analyze their speech" | `dojo-prompts/style-guide.md` |
 | "download a video", "download this" | Use yt-dlp (see below) |
 
