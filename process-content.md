@@ -67,10 +67,10 @@ yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(
 **Condensed audio** (if selected) — Run subs2cia in condense mode. **You must use [mattvsjapan's fork of subs2cia](https://github.com/mattvsjapan/subs2cia)**, not the original — install/upgrade with `pip install --upgrade git+https://github.com/mattvsjapan/subs2cia.git`. Prefer the Scribe JSON as the timing source (more accurate speech gaps); fall back to SRT only if no JSON is available.
 ```bash
 # With JSON (preferred)
-subs2cia condense -i "video.mp4" "scribe_output.json" -t 1500 -p 200 -d out_condense
+subs2cia condense -i "video.mp4" "scribe_output.json" -t 1500 -p 200 --no-gen-subtitle -d out_condense
 
 # Fallback: with SRT
-subs2cia condense -i "video.mp4" -si <subtitle_index> -d out_condense
+subs2cia condense -i "video.mp4" -si <subtitle_index> --no-gen-subtitle -d out_condense
 ```
 
 **Anki deck** (if selected) — Use the **anki** skill. Read the full skill at `anki.md` (in the same directory as this file) and follow its instructions.
