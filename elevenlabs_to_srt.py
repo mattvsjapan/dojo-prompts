@@ -55,6 +55,7 @@ class Bunsetsu:
     end: float
     speaker: str
     ends_clause: bool = False  # True if final morpheme is clause-ending
+    morph_count: int = 1  # number of MeCab morphemes in this bunsetsu
 
     def __repr__(self):
         return f"Bunsetsu({self.text!r}, {self.start:.2f}-{self.end:.2f}, {self.speaker}, clause={self.ends_clause})"
@@ -241,6 +242,7 @@ def _make_bunsetsu(chars: list[CharToken], morphs: list[tuple], speaker: str) ->
         end=chars[-1].end,
         speaker=speaker,
         ends_clause=ends_clause,
+        morph_count=len(morphs),
     )
 
 
@@ -600,6 +602,62 @@ def lines_to_cues(lines: list[Line]) -> list[Cue]:
     return final_cues
 
 
+def bunsetsu_to_anki_cues(bunsetsu_list: list[Bunsetsu]) -> list[Cue]:
+    """Build cues for Anki: one sentence per cue, split on 。！？ and speaker changes.
+
+    Long cues get split into two balanced lines at a bunsetsu boundary.
+    """
+    if not bunsetsu_list:
+        return []
+
+    cues: list[Cue] = []
+    current: list[Bunsetsu] = []
+
+    ANKI_COMMA_TOKEN_LIMIT = 5  # split at commas when cue has this many MeCab tokens or more
+
+    def flush():
+        if not current:
+            return
+        line = Line(segments=[Segment(bunsetsu=list(current))])
+        cues.append(Cue(lines=[line]))
+        current.clear()
+
+    def next_section_token_count(idx: int) -> int:
+        """Count MeCab tokens in the section following bunsetsu_list[idx],
+        up to the next comma, period, or end of sentence."""
+        count = 0
+        for b2 in bunsetsu_list[idx + 1:]:
+            # Stop if different speaker
+            if b2.speaker != bunsetsu_list[idx].speaker:
+                break
+            count += b2.morph_count
+            if b2.text and b2.text[-1] in SENTENCE_ENDERS or b2.text[-1] == "、":
+                break
+        return count
+
+    for i, b in enumerate(bunsetsu_list):
+        # Speaker change → flush previous, start new
+        if current and b.speaker != current[-1].speaker:
+            flush()
+
+        current.append(b)
+
+        # Sentence-ending punctuation → flush
+        if b.text and b.text[-1] in SENTENCE_ENDERS:
+            flush()
+        # Comma → flush if current cue has enough tokens and next section isn't tiny
+        elif b.text and b.text[-1] == "、":
+            token_count = sum(bu.morph_count for bu in current)
+            if token_count >= ANKI_COMMA_TOKEN_LIMIT:
+                next_tokens = next_section_token_count(i)
+                # Only skip split if BOTH: next section is tiny AND current is small
+                if not (next_tokens <= 2 and token_count <= 7):
+                    flush()
+
+    flush()  # remaining bunsetsu without trailing punctuation
+    return cues
+
+
 def fmt_time(seconds: float) -> str:
     m, s = divmod(seconds, 60)
     h, m = divmod(int(m), 60)
@@ -744,23 +802,40 @@ def main():
             bunsetsu = chars_to_bunsetsu(sentence_chars, tagger)
             all_bunsetsu.extend(bunsetsu)
 
-    # Build cues: bunsetsu → segments → lines → cues
+    # Build watch cues: bunsetsu → segments → lines → cues
     segments = bunsetsu_to_segments(all_bunsetsu)
     lines = segments_to_lines(segments)
-    cues = lines_to_cues(lines)
+    watch_cues = lines_to_cues(lines)
+
+    # Build anki cues: bunsetsu → sentence-level cues
+    anki_cues = bunsetsu_to_anki_cues(all_bunsetsu)
 
     # Write outputs
     json_stem = Path(json_path).stem
     parent = Path(json_path).parent
 
+    # Watch variant
     html_path = str(parent / f"{json_stem}_cues.html")
-    write_html(cues, html_path)
+    write_html(watch_cues, html_path)
 
     srt_path = str(parent / f"{json_stem}.srt")
-    write_srt(cues, srt_path)
+    write_srt(watch_cues, srt_path)
+
+    # Anki variant
+    anki_html_path = str(parent / f"{json_stem}_anki.html")
+    write_html(anki_cues, anki_html_path)
+
+    anki_srt_path = str(parent / f"{json_stem}.anki.srt")
+    write_srt(anki_cues, anki_srt_path)
 
     # Print cue summary to stdout
-    for i, c in enumerate(cues, 1):
+    print("=== Watch cues ===")
+    for i, c in enumerate(watch_cues, 1):
+        line_texts = " / ".join(ln.text for ln in c.lines)
+        print(f"Cue {i:4d}  {c.start:8.2f}-{c.end:8.2f}  {c.duration:5.1f}s  {c.char_count:3d}ch  {len(c.lines)}L  [{c.speaker}]  {line_texts}")
+
+    print(f"\n=== Anki cues ===")
+    for i, c in enumerate(anki_cues, 1):
         line_texts = " / ".join(ln.text for ln in c.lines)
         print(f"Cue {i:4d}  {c.start:8.2f}-{c.end:8.2f}  {c.duration:5.1f}s  {c.char_count:3d}ch  {len(c.lines)}L  [{c.speaker}]  {line_texts}")
 
