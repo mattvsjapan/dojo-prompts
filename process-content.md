@@ -58,9 +58,22 @@ yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(
 yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
 ```
 
-**Sanitize and rename** — YouTube titles often contain Unicode characters (fraction slashes ⧸, fullwidth punctuation ＆, etc.) that break tools like curl. Rename files to a standardized format **before any processing** so all outputs (SRT, condensed audio, Anki deck) share consistent filenames. Ask the user for a show name, then rename:
+**Sanitize and rename** — YouTube titles often contain Unicode characters (fraction slashes ⧸, fullwidth punctuation ＆, etc.) that break tools like curl. Rename files to a standardized format **before any processing** so all outputs (SRT, condensed audio, Anki deck) share consistent filenames.
+
+For the show name, create a **romanized version of the full title** — not a shortened or translated summary. Use the original Japanese title as the basis and romanize it:
+- 「機械オンチに「API」を説明する動画」 → `kikai_onchi_ni_api_wo_setsumei_suru_douga`
+- 「ゆる言語学ラジオ」 → `yuru_gengogaku_radio`
+- 「ゴールドマン・サックス マネーメイト」 → `goldman_sachs_money_mate`
+
+Rules for the show name:
+- All lowercase
+- Romanize Japanese fully — do not strip it down to just the English/ASCII parts
+- Underscores for spaces and punctuation
+- Keep English words as-is (e.g. `api`, `radio`)
+- Include season/year if relevant (e.g., `_s2`, `_2024`)
+
 ```bash
-SHOW_NAME="<show_name>"  # e.g. "goldman_sachs_money_mate"
+SHOW_NAME="<show_name>"
 # Single video
 mv *.mp4 "${SHOW_NAME}_01.mp4"
 # Multiple videos (playlist/channel)
@@ -70,8 +83,6 @@ i=1; for f in *.mp4; do
   i=$((i + 1))
 done
 ```
-
-Rules for `<show_name>`: all lowercase, underscores for spaces, include season/year if relevant (e.g., `oshi_no_ko_s2`).
 
 **IMPORTANT:** This rename must happen before transcription, condensed audio, or any other processing. subs2cia and other tools name their outputs after the input file — if you process before renaming, outputs will have mismatched names.
 
