@@ -2,7 +2,7 @@
 name: create-srt
 description: |
   Generate Japanese SRT subtitles from a video file using ElevenLabs Scribe v2
-  and BudouX for natural phrase boundaries.
+  and MeCab for natural bunsetsu boundaries.
 allowed-tools:
   - Bash
   - Read
@@ -13,7 +13,7 @@ allowed-tools:
 
 # Create SRT
 
-Generate natural Japanese subtitles from a video file using ElevenLabs Scribe v2 and BudouX.
+Generate natural Japanese subtitles from a video file using ElevenLabs Scribe v2 and MeCab bunsetsu segmentation.
 
 ## Usage
 
@@ -22,7 +22,7 @@ Run `/create-srt <video_file>` to generate an SRT file from a video.
 ## Requirements
 
 ```
-pip install budoux
+pip install fugashi unidic-lite
 ```
 
 An ElevenLabs API key with Scribe access.
@@ -98,15 +98,15 @@ The response JSON has this structure:
 ```
 
 Key things to know:
-- For Japanese, each character is returned as a separate "word" entry. We concatenate them ourselves and use BudouX to find natural phrase boundaries.
+- For Japanese, each character is returned as a separate "word" entry. We concatenate them ourselves and use MeCab to find natural bunsetsu (phrase) boundaries.
 - `type` is one of: `"word"` (actual text), `"spacing"` (whitespace, skip these), `"audio_event"` (music, laughter, etc. in brackets).
 - `speaker_id` identifies different speakers (useful for diarization).
 - `start` and `end` are timestamps in seconds.
 - Do not request `additional_formats` from the API — we build the SRT ourselves from the raw word data.
 
-### 3. Generate the SRT with BudouX phrase boundaries
+### 3. Generate the SRT with MeCab bunsetsu segmentation
 
-BudouX is Google's ML-based line break library for Japanese. It predicts natural phrase (bunsetsu) boundaries, so subtitles never split mid-word.
+MeCab with UniDic segments Japanese text into bunsetsu (phrase units), so subtitles break at natural grammatical boundaries.
 
 Run the conversion script:
 ```bash
@@ -121,30 +121,10 @@ This produces `scribe_output.srt` alongside the JSON file.
 
 ## Tuning parameters
 
+Key constants are defined in `scripts/srt_common.py` and `scripts/srt_watch.py`:
+
 | Parameter | Default | Effect |
 |-----------|---------|--------|
-| Gap threshold | 0.4s | Silence duration that splits utterances. Lower = more splits between phrases. Higher = longer unbroken runs. |
-| `MAX_CHARS` | 25 | Max characters per line. Both lines in a two-line entry share this cap. Lower = shorter, more frequent subtitles. |
-
-For denser subtitles (e.g. a lecture), increase `MAX_CHARS` to 28-30. For fast-paced dialogue, decrease to 20.
-
-## Alternative: stable-ts
-
-If you want more control over regrouping (e.g. split by duration, merge by gap), you can use `stable-ts` instead of the manual approach above. Convert the ElevenLabs words into stable-ts format and apply regrouping rules:
-
-```python
-import stable_whisper
-
-words_st = [{'word': w['text'], 'start': w['start'], 'end': w['end']}
-            for w in data['words'] if w['type'] != 'spacing']
-
-result = stable_whisper.WhisperResult({
-    'language': 'ja',
-    'segments': [{'id': 0, 'words': words_st}]
-})
-
-result.regroup('sp=。/！/？/!/?_sp=、/,_sg=.3_sl=20_mg=.05+12')
-result.to_srt_vtt('output.srt', word_level=False)
-```
-
-This works but `sl` (split by length) doesn't know about Japanese word boundaries, so it can cut mid-word. The BudouX approach above avoids this problem entirely.
+| `GAP_THRESHOLD` | 0.1s | Time gap that forces a segment break between bunsetsu. |
+| `MERGE_GAP_LIMIT` | 0.4s | Segments this far apart are never merged into one line. |
+| `LINE_CHAR_LIMIT` | 18 | Max characters per subtitle line. |

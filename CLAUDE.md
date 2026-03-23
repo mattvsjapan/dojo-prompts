@@ -30,7 +30,7 @@ command -v yt-dlp >/dev/null 2>&1 || echo "MISSING: yt-dlp"
 command -v ffprobe >/dev/null 2>&1 || echo "MISSING: ffprobe"
 
 # Python packages
-pip show budoux >/dev/null 2>&1 || echo "MISSING: budoux"
+pip show fugashi >/dev/null 2>&1 || echo "MISSING: fugashi"
 pip show genanki >/dev/null 2>&1 || echo "MISSING: genanki"
 ```
 

@@ -57,7 +57,7 @@ yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(
 yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
 ```
 
-**Create Japanese subtitles** — This always runs. Use the **create-srt** skill to transcribe each video with ElevenLabs Scribe v2 and generate SRT files with natural phrase boundaries using BudouX. Read the full skill at `create-srt.md` (in the same directory as this file) and follow its instructions for each video file.
+**Create Japanese subtitles** — This always runs. Use the **create-srt** skill to transcribe each video with ElevenLabs Scribe v2 and generate SRT files with natural bunsetsu boundaries using MeCab. Read the full skill at `create-srt.md` (in the same directory as this file) and follow its instructions for each video file.
 
 **English subtitles** (if selected) — Use the **translate-srt** skill. Read the full skill at `translate-srt.md` (in the same directory as this file) and follow its instructions, translating from Japanese to English.
 

@@ -13,10 +13,10 @@ These skills are designed for [Claude Code](https://docs.anthropic.com/en/docs/c
 
 `/process-content` orchestrates the individual skills below — you can also run them directly:
 
-- **[Create SRT](create-srt.md)** — Generate Japanese subtitles from video using ElevenLabs Scribe and BudouX
+- **[Create SRT](create-srt.md)** — Generate Japanese subtitles from video using ElevenLabs Scribe and MeCab bunsetsu segmentation
 - **[Translate SRT](translate-srt.md)** — Translate the Japanese subtitles into English for reference
 - **Condensed Audio** — Use [subs2cia](https://github.com/mattvsjapan/subs2cia) to extract just the spoken audio for passive listening
-- **[Subs2SRS](subs2srs.md)** — Generate Anki decks from your content with audio clips and subtitle text
+- **[Anki](anki.md)** — Generate Anki decks from your content with audio clips and subtitle text
 
 ## Installation
 
@@ -45,7 +45,7 @@ All skills also work as plain prompts — paste the contents into any AI chat (C
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading content
 - [ElevenLabs API key](https://elevenlabs.io/) with Scribe access (for create-srt)
 - [mpv](https://mpv.io/) media player (for primed listening)
-- Python packages: `budoux`, `genanki`
+- Python packages: `fugashi`, `unidic-lite`, `genanki`
 - [subs2cia](https://github.com/mattvsjapan/subs2cia) — **you must use this fork**, not the original. It adds context column support and other features used by the subs2srs and condensed audio steps. Install with:
   ```bash
   pip install git+https://github.com/mattvsjapan/subs2cia.git
