@@ -58,33 +58,22 @@ yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(
 yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
 ```
 
-**Sanitize and rename** — YouTube titles often contain Unicode characters (fraction slashes ⧸, fullwidth punctuation ＆, etc.) that break tools like curl. Rename files to a standardized format **before any processing** so all outputs (SRT, condensed audio, Anki deck) share consistent filenames.
+**Sanitize and rename** — Check if filenames need renaming **before any processing**. subs2cia and other tools name their outputs after the input file — if you process before renaming, outputs will have mismatched names.
 
-For the show name, create a **romanized version of the full title** — not a shortened or translated summary. Use the original Japanese title as the basis and romanize it:
+**Skip renaming if** the filename is already ASCII-safe (no CJK characters, no Unicode punctuation, no special characters that break shell tools). For example, `goldman_sachs_money_mate_01.mp4` is fine as-is.
+
+**Rename if** the filename contains Japanese/Chinese/Korean characters or problematic Unicode. Create a **romanized version of the full title** — not a shortened or translated summary:
 - 「機械オンチに「API」を説明する動画」 → `kikai_onchi_ni_api_wo_setsumei_suru_douga`
 - 「ゆる言語学ラジオ」 → `yuru_gengogaku_radio`
 - 「ゴールドマン・サックス マネーメイト」 → `goldman_sachs_money_mate`
 
-Rules for the show name:
+Rules for renaming:
 - All lowercase
 - Romanize Japanese fully — do not strip it down to just the English/ASCII parts
 - Underscores for spaces and punctuation
 - Keep English words as-is (e.g. `api`, `radio`)
 - Include season/year if relevant (e.g., `_s2`, `_2024`)
-
-```bash
-SHOW_NAME="<show_name>"
-# Single video
-mv *.mp4 "${SHOW_NAME}_01.mp4"
-# Multiple videos (playlist/channel)
-i=1; for f in *.mp4; do
-  num=$(printf "%02d" $i)
-  mv "$f" "${SHOW_NAME}_${num}.mp4"
-  i=$((i + 1))
-done
-```
-
-**IMPORTANT:** This rename must happen before transcription, condensed audio, or any other processing. subs2cia and other tools name their outputs after the input file — if you process before renaming, outputs will have mismatched names.
+- Only add episode numbers (`_01`, `_02`) when there are **multiple videos** in a series. A single standalone video does not need a number suffix.
 
 **Transcribe** — This always runs. Use the **create-srt** skill's steps 1-2 to transcribe each video with ElevenLabs Scribe v2 and produce the Scribe JSON file. Read `create-srt.md` (in the same directory as this file). The JSON is the foundation for all other outputs.
 

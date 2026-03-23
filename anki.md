@@ -102,7 +102,7 @@ subs2cia srs -b -i "*.mp4" -ai 0 -si 0 -p 500 -N -d out_srs --export-header-row
 1. Get the source directory from the user
 2. **Check available input sources** — look for Scribe JSON files first, then external SRT/ASS, then embedded tracks (see priority order above)
 3. **Identify audio tracks** — use ffprobe to find the target language audio stream index (default: Japanese)
-4. **Rename source video files** to standard format: `<show_name>_XX.mp4`
+4. **Rename source video files if needed** — skip if filenames are already ASCII-safe. Only add episode numbers (`_01`, `_02`) when there are multiple videos. See `process-content.md` for full renaming rules.
 5. Navigate to the source directory
 6. Run subs2cia with JSON input (preferred) or subtitle track indices (fallback)
 7. **Generate episode summaries** - for each TSV, read subtitle text and generate a translation briefing (see Episode Summary Format below), then prepend it to every row's `context` column. Use subagents to process all TSVs in parallel.
