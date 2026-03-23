@@ -60,10 +60,15 @@ Then run the split script:
 python3 dojo-prompts/scripts/srt_split.py <srt_file_path>
 ```
 
-If the user provides an ElevenLabs Scribe JSON file instead of an SRT, first generate the translate SRT:
+If the user provides an ElevenLabs Scribe JSON file instead of an SRT, first generate the translate SRT. Use `-o` to name the output after the original video file (not the JSON):
 ```bash
-python3 dojo-prompts/scripts/srt_translate.py <json_file_path>
+python3 dojo-prompts/scripts/srt_translate.py -o <video_stem> <json_file_path>
 ```
+For example, if the video is `kikai_onchi_api_01.mp4` and the JSON is `scribe_output 22.29.33.json`:
+```bash
+python3 dojo-prompts/scripts/srt_translate.py -o kikai_onchi_api_01 "scribe_output 22.29.33.json"
+```
+This produces `kikai_onchi_api_01.translate.srt`, which then becomes the input for the split script.
 
 This parses the SRT, saves `metadata.json`, `chunks.json`, and `original_line_counts.json` to `/tmp/translate-srt/`, and writes chunk input files with context sections and `---BLOCK_SEP---` separators. Multi-line blocks are flattened to single lines for translation — line balancing is applied during reassembly.
 
@@ -142,7 +147,7 @@ If the original filename already has a language code (e.g., `movie.ja.srt`), rep
 If the input was an ElevenLabs Scribe JSON file (not an existing SRT), the `srt_translate.py` script generated an intermediate `.translate.srt` file. Delete it — only the translated `.en.srt` should remain:
 
 ```bash
-rm <json_stem>.translate.srt
+rm <video_stem>.translate.srt
 ```
 
 **Do NOT delete the Scribe JSON file** — it may be needed by other workflows.

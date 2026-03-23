@@ -282,12 +282,30 @@ def lines_to_cues(lines: list[Line]) -> list[Cue]:
 
 
 def main():
-    if len(sys.argv) < 2 or (len(sys.argv) == 2 and sys.argv[1] == "--html"):
-        print(f"Usage: {sys.argv[0]} [--html] <elevenlabs_scribe.json>", file=sys.stderr)
+    if len(sys.argv) < 2:
+        print(f"Usage: {sys.argv[0]} [--html] [-o output_stem] <elevenlabs_scribe.json>", file=sys.stderr)
         sys.exit(1)
 
     html_mode = "--html" in sys.argv
-    json_path = [a for a in sys.argv[1:] if a != "--html"][0]
+    args = [a for a in sys.argv[1:] if a != "--html"]
+
+    # Parse -o flag for output stem
+    output_stem = None
+    remaining = []
+    i = 0
+    while i < len(args):
+        if args[i] == "-o" and i + 1 < len(args):
+            output_stem = args[i + 1]
+            i += 2
+        else:
+            remaining.append(args[i])
+            i += 1
+
+    if not remaining:
+        print(f"Usage: {sys.argv[0]} [--html] [-o output_stem] <elevenlabs_scribe.json>", file=sys.stderr)
+        sys.exit(1)
+
+    json_path = remaining[0]
     all_bunsetsu = load_bunsetsu(json_path)
 
     # Build watch cues: bunsetsu → segments → lines → cues
@@ -296,14 +314,14 @@ def main():
     cues = lines_to_cues(lines)
 
     # Write outputs
-    json_stem = Path(json_path).stem
+    stem = output_stem or Path(json_path).stem
     parent = Path(json_path).parent
 
     if html_mode:
-        html_path = str(parent / f"{json_stem}_cues.html")
+        html_path = str(parent / f"{stem}_cues.html")
         write_html(cues, html_path)
 
-    srt_path = str(parent / f"{json_stem}.srt")
+    srt_path = str(parent / f"{stem}.srt")
     write_srt(cues, srt_path)
 
     print_cue_summary("Watch cues", cues)

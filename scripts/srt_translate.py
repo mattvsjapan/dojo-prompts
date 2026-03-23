@@ -64,26 +64,44 @@ def anki_to_translate_cues(anki_cues: list[Cue]) -> list[Cue]:
 
 
 def main():
-    if len(sys.argv) < 2 or (len(sys.argv) == 2 and sys.argv[1] == "--html"):
-        print(f"Usage: {sys.argv[0]} [--html] <elevenlabs_scribe.json>", file=sys.stderr)
+    if len(sys.argv) < 2:
+        print(f"Usage: {sys.argv[0]} [--html] [-o output_stem] <elevenlabs_scribe.json>", file=sys.stderr)
         sys.exit(1)
 
     html_mode = "--html" in sys.argv
-    json_path = [a for a in sys.argv[1:] if a != "--html"][0]
+    args = [a for a in sys.argv[1:] if a != "--html"]
+
+    # Parse -o flag for output stem
+    output_stem = None
+    remaining = []
+    i = 0
+    while i < len(args):
+        if args[i] == "-o" and i + 1 < len(args):
+            output_stem = args[i + 1]
+            i += 2
+        else:
+            remaining.append(args[i])
+            i += 1
+
+    if not remaining:
+        print(f"Usage: {sys.argv[0]} [--html] [-o output_stem] <elevenlabs_scribe.json>", file=sys.stderr)
+        sys.exit(1)
+
+    json_path = remaining[0]
     all_bunsetsu = load_bunsetsu(json_path)
 
     anki_cues = bunsetsu_to_anki_cues(all_bunsetsu)
     cues = anki_to_translate_cues(anki_cues)
 
     # Write outputs
-    json_stem = Path(json_path).stem
+    stem = output_stem or Path(json_path).stem
     parent = Path(json_path).parent
 
     if html_mode:
-        html_path = str(parent / f"{json_stem}_translate.html")
+        html_path = str(parent / f"{stem}_translate.html")
         write_html(cues, html_path)
 
-    srt_path = str(parent / f"{json_stem}.translate.srt")
+    srt_path = str(parent / f"{stem}.translate.srt")
     write_srt(cues, srt_path)
 
     print_cue_summary("Translate cues", cues)
