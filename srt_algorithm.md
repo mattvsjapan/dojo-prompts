@@ -124,6 +124,29 @@ This prevents short trailing fragments like `やっぱ。` from being stranded a
 
 Unlike the watch variant, Anki cues are always single-line with no character limit. The goal is one complete thought per card, regardless of length.
 
+## Translate Variant
+
+The translate variant builds on the Anki cues by merging adjacent small cues into larger translation-friendly blocks.
+
+### Merge Pass
+
+Starting from the Anki cues, adjacent cues are merged if:
+- Time gap between them is **< 0.4s** (MERGE_GAP_LIMIT)
+- Combined MeCab token count is **≤ 20** (TRANSLATE_MAX_TOKENS)
+
+Merging is allowed across speakers — cross-speaker cues get separate lines within the same block, with each speaker's content on its own line.
+
+### Speaker Dashes
+
+When a cue contains multiple speakers, each speaker's line is prefixed with `- ` (Netflix-style) in the SRT output. This makes speaker changes visually clear both for human readers and for the translation LLM. The HTML visualization also shows these dashes.
+
+### Translation Pipeline Integration
+
+The translate SRT is the input for the parallel translation pipeline (`translate-srt.md`). The reassembly script (`srt_reassemble.py`) handles formatting programmatically:
+- **Merged dash fix:** If the LLM collapses `- foo\n- bar` into `- foo - bar`, the script splits them back apart by detecting ` - ` within lines starting with `- `
+- **Long line balancing:** Any line over 50 characters is split into two balanced lines at the nearest word boundary
+- These fixes mean the translation prompt can stay simple — no need for verbose formatting instructions
+
 ## Key Constants
 
 | Constant | Value | Purpose |
@@ -138,6 +161,7 @@ Unlike the watch variant, Anki cues are always single-line with no character lim
 | `ANKI_COMMA_TOKEN_LIMIT` | 5 | Split at commas when cue has this many MeCab tokens |
 | Anki orphan: max next tokens | 2 | Don't split if next section is this small... |
 | Anki orphan: max current tokens | 7 | ...and current cue is this small |
+| `TRANSLATE_MAX_TOKENS` | 20 | Max MeCab tokens per translate cue after merging |
 
 ## Design Philosophy
 
@@ -167,3 +191,5 @@ Outputs:
 - `<name>_cues.html` — watch visual debug view with bunsetsu boundaries, speaker colors, and timing info
 - `<name>.anki.srt` — Anki subtitle file (sentence-level cues)
 - `<name>_anki.html` — Anki visual debug view
+- `<name>.translate.srt` — translate subtitle file (merged cues for translation pipeline)
+- `<name>_translate.html` — translate visual debug view
