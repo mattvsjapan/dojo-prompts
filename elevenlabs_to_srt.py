@@ -640,6 +640,10 @@ def bunsetsu_to_anki_cues(bunsetsu_list: list[Bunsetsu]) -> list[Cue]:
         if current and b.speaker != current[-1].speaker:
             flush()
 
+        # Time gap ≥ MERGE_GAP_LIMIT → flush previous
+        if current and b.start - current[-1].end >= MERGE_GAP_LIMIT:
+            flush()
+
         current.append(b)
 
         # Sentence-ending punctuation → flush
