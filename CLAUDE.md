@@ -52,12 +52,17 @@ If a required tool is missing, just install it and move on. No need to ask — b
 
 ## Important
 
-- **Downloading videos**: Always use yt-dlp and always download as MP4:
+- **Downloading videos**: Always use yt-dlp and always download as MP4. After downloading, rename files to strip Unicode and special characters (YouTube titles often contain characters like ⧸ ＆ that break curl and other tools):
   ```bash
   # Single video
   yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(title)s.%(ext)s" "URL"
   # Playlist or channel
   yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
+  # Sanitize filenames
+  for f in *.mp4; do
+    safe=$(echo "$f" | sed 's/[^a-zA-Z0-9._-]/_/g' | sed 's/__*/_/g' | sed 's/^_//;s/_\./\./')
+    [ "$f" != "$safe" ] && mv "$f" "$safe"
+  done
   ```
 - **subs2cia**: Any step that uses subs2cia must use [mattvsjapan's fork](https://github.com/mattvsjapan/subs2cia). Install with: `pip install git+https://github.com/mattvsjapan/subs2cia.git`
 - **ElevenLabs API key**: If `$ELEVENLABS_API_KEY` is not set, ask the user to paste their key before transcribing.

@@ -58,6 +58,14 @@ yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(
 yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
 ```
 
+**Sanitize filenames** — YouTube titles often contain Unicode characters (fraction slashes ⧸, fullwidth punctuation ＆, etc.) that break tools like curl. After downloading, rename files to use only ASCII letters, numbers, underscores, and hyphens:
+```bash
+for f in *.mp4; do
+  safe=$(echo "$f" | sed 's/[^a-zA-Z0-9._-]/_/g' | sed 's/__*/_/g' | sed 's/^_//;s/_\./\./')
+  [ "$f" != "$safe" ] && mv "$f" "$safe"
+done
+```
+
 **Transcribe** — This always runs. Use the **create-srt** skill's steps 1-2 to transcribe each video with ElevenLabs Scribe v2 and produce the Scribe JSON file. Read `create-srt.md` (in the same directory as this file). The JSON is the foundation for all other outputs.
 
 **Japanese subtitles** (if selected) — Run `srt_watch.py` on the JSON with `-o` to name the output after the video file:
@@ -81,3 +89,7 @@ subs2cia condense -i "video.mp4" -si <subtitle_index> --no-gen-subtitle -d out_c
 ### 3. Report results
 
 Tell the user what was generated and where the output files are.
+
+## Notes
+
+- **Audio stream language tags are unreliable.** yt-dlp sometimes tags Japanese audio as "English" because YouTube's metadata is wrong. When using subs2cia with `-tl ja`, this can cause it to skip the correct audio stream. For YouTube downloads, use `-ai 0` to explicitly select the first (usually only) audio stream rather than relying on language matching.
