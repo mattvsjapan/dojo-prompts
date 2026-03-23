@@ -34,7 +34,7 @@ pip show fugashi >/dev/null 2>&1 || echo "MISSING: fugashi"
 pip show genanki >/dev/null 2>&1 || echo "MISSING: genanki"
 ```
 
-**Special case — subs2cia:** Even if subs2cia is installed, you must verify it's the correct fork. Check with:
+**Special case — subs2cia:** Even if subs2cia is installed, you must verify it's the correct fork **and that it's up to date**. Check with:
 ```bash
 pip show subs2cia 2>/dev/null | grep -i "home-page\|location"
 ```
@@ -42,6 +42,10 @@ If the installed version is NOT from `github.com/mattvsjapan/subs2cia`, uninstal
 ```bash
 pip uninstall -y subs2cia
 pip install git+https://github.com/mattvsjapan/subs2cia.git
+```
+If it IS the correct fork, upgrade it to ensure you have the latest features:
+```bash
+pip install --upgrade git+https://github.com/mattvsjapan/subs2cia.git
 ```
 
 If a required tool is missing, just install it and move on. No need to ask — but don't reinstall things that are already there.

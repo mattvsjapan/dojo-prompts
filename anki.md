@@ -27,7 +27,12 @@ pip3 uninstall subs2cia
 pip3 install git+https://github.com/mattvsjapan/subs2cia.git
 ```
 
-Do not proceed until the correct fork is installed.
+**If the correct fork is already installed, upgrade it to ensure you have the latest features:**
+```bash
+pip3 install --upgrade git+https://github.com/mattvsjapan/subs2cia.git
+```
+
+Do not proceed until the correct fork is installed and up to date.
 
 ## Usage
 
