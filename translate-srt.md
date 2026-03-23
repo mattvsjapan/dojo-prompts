@@ -92,6 +92,7 @@ CRITICAL RULES:
 - Output one translated block per input block, separated by ---BLOCK_SEP---
 - Preserve the EXACT number of blocks ({num_blocks}) — this is critical for reassembly with timecodes
 - Within each block, preserve the line structure (if a block has 2 lines, output 2 lines)
+- Lines starting with "- " indicate a speaker change. Preserve the "- " prefix in the translation
 - These subtitles are for LANGUAGE LEARNING. Faithfulness to the Japanese is more important than natural-sounding English. The reader is trying to understand what was said in Japanese, not read a polished English script.
 - Preserve the structure and nuance of the original Japanese. If a sentence is awkward or roundabout in Japanese, reflect that — don't clean it up into smooth English.
 - Do NOT shorten, compress, or paraphrase. Translate everything that was said.

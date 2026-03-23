@@ -85,9 +85,30 @@ with open(output_srt_path, 'w', encoding='utf-8') as f:
         # Split on em dash — this indicates a speaker change mid-line
         if ' — ' in text:
             text = text.replace(' — ', '\n')
+        # Fix merged speaker-change dashes: "- foo - bar" → "- foo\n- bar"
+        if text.startswith('- ') and ' - ' in text[2:]:
+            parts = text.split(' - ')
+            text = '\n- '.join(parts)
         # Balance into two lines if the original Japanese block was two lines
         elif i in original_two_line and '\n' not in text:
             text = balance_lines(text)
+        # Split long lines into two balanced lines (including within multi-line blocks)
+        lines_out = []
+        for line in text.split('\n'):
+            if len(line) > 50:
+                prefix = ''
+                content = line
+                if line.startswith('- '):
+                    prefix = '- '
+                    content = line[2:]
+                balanced = balance_lines(content)
+                # Re-add prefix to first line only
+                if prefix:
+                    balanced = prefix + balanced
+                lines_out.append(balanced)
+            else:
+                lines_out.append(line)
+        text = '\n'.join(lines_out)
         f.write(f'{meta["index"]}\n{meta["timecode"]}\n{text}\n\n')
 
 errors = missing + failed

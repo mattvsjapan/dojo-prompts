@@ -662,6 +662,55 @@ def bunsetsu_to_anki_cues(bunsetsu_list: list[Bunsetsu]) -> list[Cue]:
     return cues
 
 
+TRANSLATE_MAX_TOKENS = 20  # max MeCab tokens per translate cue
+
+
+def _bunsetsu_to_speaker_lines(bunsetsu_list: list[Bunsetsu]) -> list[Line]:
+    """Group bunsetsu into lines by speaker runs."""
+    lines: list[Line] = []
+    current: list[Bunsetsu] = [bunsetsu_list[0]]
+    for b in bunsetsu_list[1:]:
+        if b.speaker != current[-1].speaker:
+            lines.append(Line(segments=[Segment(bunsetsu=current)]))
+            current = [b]
+        else:
+            current.append(b)
+    lines.append(Line(segments=[Segment(bunsetsu=current)]))
+    return lines
+
+
+def anki_to_translate_cues(anki_cues: list[Cue]) -> list[Cue]:
+    """Merge adjacent Anki cues into larger translation-friendly blocks.
+
+    Merge if:
+    - No time gap ≥ MERGE_GAP_LIMIT between them
+    - Combined MeCab token count ≤ TRANSLATE_MAX_TOKENS
+    """
+    if not anki_cues:
+        return []
+
+    def token_count(cue: Cue) -> int:
+        return sum(b.morph_count for ln in cue.lines for seg in ln.segments for b in seg.bunsetsu)
+
+    def all_bunsetsu(cue: Cue) -> list[Bunsetsu]:
+        return [b for ln in cue.lines for seg in ln.segments for b in seg.bunsetsu]
+
+    result: list[Cue] = [anki_cues[0]]
+
+    for cue in anki_cues[1:]:
+        prev = result[-1]
+        gap = cue.start - prev.end
+        combined_tokens = token_count(prev) + token_count(cue)
+
+        if gap < MERGE_GAP_LIMIT and combined_tokens <= TRANSLATE_MAX_TOKENS:
+            combined = all_bunsetsu(prev) + all_bunsetsu(cue)
+            result[-1] = Cue(lines=_bunsetsu_to_speaker_lines(combined))
+        else:
+            result.append(cue)
+
+    return result
+
+
 def fmt_time(seconds: float) -> str:
     m, s = divmod(seconds, 60)
     h, m = divmod(int(m), 60)
@@ -692,6 +741,11 @@ def write_srt(cues: list[Cue], out_path: str):
         lines.append(f"{fmt_srt_time(cue.start)} --> {fmt_srt_time(end)}")
         # Strip 。 only at the end of each line
         cue_lines = [ln.text.rstrip("。") for ln in cue.lines]
+        # Add dash prefix when multiple speakers share a cue
+        if len(cue_lines) > 1:
+            speakers = [ln.speaker for ln in cue.lines]
+            if len(set(speakers)) > 1:
+                cue_lines = [f"- {cl}" for cl in cue_lines]
         lines.append("\n".join(cue_lines))
         lines.append("")
 
@@ -758,6 +812,9 @@ def write_html(cues: list[Cue], out_path: str):
         meta = f"{time_str}  {cue.duration:.1f}s  {cue.char_count}ch  {len(cue.lines)}L"
 
         lines_html = []
+        # Check if this cue has multiple speakers
+        cue_speakers = set(ln.speaker for ln in cue.lines)
+        multi_speaker = len(cue_speakers) > 1 and len(cue.lines) > 1
         for ln in cue.lines:
             ln_color = SPEAKER_COLORS[speakers_seen[ln.speaker] % len(SPEAKER_COLORS)]
             bunsetsu_spans = []
@@ -770,7 +827,8 @@ def write_html(cues: list[Cue], out_path: str):
                         f'title="{b_time}">{escaped}</span>'
                     )
             line_text = '<span class="separator">|</span>'.join(bunsetsu_spans)
-            lines_html.append(f'<span class="cue-line">{line_text}</span>')
+            dash = '<span style="opacity:0.5">- </span>' if multi_speaker else ''
+            lines_html.append(f'<span class="cue-line">{dash}{line_text}</span>')
 
         text_html = "".join(lines_html)
 
@@ -832,6 +890,15 @@ def main():
     anki_srt_path = str(parent / f"{json_stem}.anki.srt")
     write_srt(anki_cues, anki_srt_path)
 
+    # Translate variant: merge Anki cues into larger blocks
+    translate_cues = anki_to_translate_cues(anki_cues)
+
+    translate_html_path = str(parent / f"{json_stem}_translate.html")
+    write_html(translate_cues, translate_html_path)
+
+    translate_srt_path = str(parent / f"{json_stem}.translate.srt")
+    write_srt(translate_cues, translate_srt_path)
+
     # Print cue summary to stdout
     print("=== Watch cues ===")
     for i, c in enumerate(watch_cues, 1):
@@ -840,6 +907,11 @@ def main():
 
     print(f"\n=== Anki cues ===")
     for i, c in enumerate(anki_cues, 1):
+        line_texts = " / ".join(ln.text for ln in c.lines)
+        print(f"Cue {i:4d}  {c.start:8.2f}-{c.end:8.2f}  {c.duration:5.1f}s  {c.char_count:3d}ch  {len(c.lines)}L  [{c.speaker}]  {line_texts}")
+
+    print(f"\n=== Translate cues ===")
+    for i, c in enumerate(translate_cues, 1):
         line_texts = " / ".join(ln.text for ln in c.lines)
         print(f"Cue {i:4d}  {c.start:8.2f}-{c.end:8.2f}  {c.duration:5.1f}s  {c.char_count:3d}ch  {len(c.lines)}L  [{c.speaker}]  {line_texts}")
 
