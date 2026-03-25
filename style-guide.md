@@ -20,25 +20,43 @@ Run `/style-guide` and the skill will walk you through the process.
 
 ## Prerequisites
 
-This works best with 10–20 transcripts from long-form content (livestreams, podcasts, interviews) where the person is speaking naturally — not scripted content.
-
-### How to get transcripts
-
-1. Go to your language parent's YouTube channel
-2. Use [yt-dlp](https://github.com/yt-dlp/yt-dlp) to download auto-generated subtitles:
-```bash
-yt-dlp --write-auto-sub --sub-lang ja --skip-download --sub-format vtt "VIDEO_URL"
-```
-3. Alternatives:
-   - Copy auto-generated subtitles manually from YouTube (click the "..." menu → "Show transcript")
-   - Use any other transcription tool on downloaded audio
-   - Find existing transcripts online
+This works best with ~20 hours of long-form content (livestreams, podcasts, interviews) where the person is speaking naturally — not scripted content.
 
 ## Workflow
 
-1. **Gather transcripts** — Ask the user for transcript files or a directory containing them. Read the transcripts.
-2. **Analyze** — Produce a comprehensive Speaking Style Guide covering the sections below.
-3. **Output** — Write the guide to a file. The guide should be written in Japanese, with direct quotes from the transcripts as examples.
+### 1. Get transcripts of the language parent
+
+Ask the user: **Do you already have transcripts or subtitle files for your language parent?**
+
+- **If yes** — Ask for the file path(s) or directory and read them.
+- **If no** — Ask: **Do you have video/audio files of them that need to be transcribed?**
+  - **If yes** — Help transcribe them with ElevenLabs Scribe. Check if `$ELEVENLABS_API_KEY` is set; if not, ask the user to paste their key. Transcribe each file:
+    ```bash
+    curl -s -X POST "https://api.elevenlabs.io/v1/speech-to-text" \
+      -H "xi-api-key: $ELEVENLABS_API_KEY" \
+      -F "model_id=scribe_v2" \
+      -F "file=@video.mp4" \
+      -F "language_code=ja" \
+      -F "timestamps_granularity=word" \
+      > video.json
+    ```
+    Extract the `text` field from each JSON file for analysis.
+  - **If no** — Ask the user to provide a **YouTube channel URL or playlist URL** for their language parent. Then:
+    1. List available videos with yt-dlp
+    2. Select roughly 20 hours of long-form, unscripted content (prioritize livestreams, podcasts, interviews — avoid short or scripted videos)
+    3. Download auto-generated Japanese subtitles:
+       ```bash
+       yt-dlp --write-auto-sub --sub-lang ja --skip-download --sub-format vtt -o "%(title)s.%(ext)s" "PLAYLIST_OR_CHANNEL_URL"
+       ```
+    4. Read the downloaded subtitle files for analysis.
+
+### 2. Analyze
+
+Produce a comprehensive Speaking Style Guide covering the analysis sections below.
+
+### 3. Output
+
+Write the guide to a file. The guide should be written in Japanese, with direct quotes from the transcripts as examples.
 
 ## Analysis sections
 

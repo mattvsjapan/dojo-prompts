@@ -14,6 +14,7 @@ When the user asks about any of the following, read the corresponding skill file
 | "translate subtitles", "translate this SRT", "make English subs" | `dojo-prompts/translate-srt.md` |
 | "make an Anki deck", "subs2srs", "create flashcards" | `dojo-prompts/anki.md` |
 | "style guide", "language parent", "analyze their speech" | `dojo-prompts/style-guide.md` |
+| "find my mistakes", "analyze my output", "what am I doing wrong" | `dojo-prompts/find-mistakes.md` |
 | "condensed audio", "condense this", "passive listening" | `dojo-prompts/condensed-audio.md` |
 | "download a video", "download this" | Use yt-dlp (see below) |
 
