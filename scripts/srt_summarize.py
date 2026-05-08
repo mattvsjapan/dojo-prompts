@@ -7,11 +7,13 @@ JSON validation, contiguity repair, and final SRT assembly — Claude only
 reads window inputs and writes JSON outputs.
 
 Modes:
-    prepare <srt_path>             Parse SRT, init state, write full transcript.
+    prepare <input_path>           Parse Scribe JSON or SRT, init state.
     next-window [source_language]  Build window brief (premise + recent + window).
     accept <json_path>             Validate/repair JSON, advance cursor.
     finalize <output_srt_path>     Build final summary SRT from accepted chunks.
 
+`prepare` accepts either a Scribe JSON (preferred — split on punctuation,
+speaker change, or long pauses) or an SRT (one block = one sentence).
 The premise subagent writes premise.txt directly; this helper reads it.
 
 State files in /tmp/primed-summaries/:
@@ -29,12 +31,33 @@ import sys
 WINDOW_SIZE = 40
 CORE_SIZE = 25
 RECENT_SUMMARIES = 3
+SENTENCE_ENDERS = frozenset('。！？!?')
+PAUSE_THRESHOLD = 1.0  # seconds — gap between words that forces a sentence break
 STATE_DIR = '/tmp/primed-summaries'
 BLOCKS_PATH = os.path.join(STATE_DIR, 'blocks.json')
 STATE_PATH = os.path.join(STATE_DIR, 'state.json')
 PREMISE_PATH = os.path.join(STATE_DIR, 'premise.txt')
 BRIEF_PATH = os.path.join(STATE_DIR, 'window_brief.txt')
 FULL_TRANSCRIPT_PATH = os.path.join(STATE_DIR, 'full_transcript.txt')
+
+
+def _fmt_srt_time(seconds):
+    if seconds < 0:
+        seconds = 0
+    m, s = divmod(seconds, 60)
+    h, m = divmod(int(m), 60)
+    ms = int(round((s - int(s)) * 1000))
+    return f'{h:02d}:{int(m):02d}:{int(s):02d},{ms:03d}'
+
+
+def _parse_srt_timecode(tc):
+    """Parse 'HH:MM:SS,mmm --> HH:MM:SS,mmm' into (start_sec, end_sec)."""
+    def to_sec(t):
+        t = t.replace(',', '.')
+        h, m, s = t.split(':')
+        return int(h) * 3600 + int(m) * 60 + float(s)
+    start, end = [p.strip() for p in tc.split(' --> ')]
+    return to_sec(start), to_sec(end)
 
 
 def parse_srt(srt_path):
@@ -45,12 +68,84 @@ def parse_srt(srt_path):
         lines = raw.strip().split('\n')
         if len(lines) < 2:
             continue
+        timecode = lines[1].strip()
+        try:
+            start_sec, end_sec = _parse_srt_timecode(timecode)
+        except (ValueError, IndexError):
+            continue
         blocks.append({
-            'index': lines[0].strip(),
-            'timecode': lines[1].strip(),
+            'timecode': timecode,
+            'start': start_sec,
+            'end': end_sec,
             'text': ' '.join(ln.strip() for ln in lines[2:] if ln.strip()),
         })
     return blocks
+
+
+def parse_scribe_json(json_path):
+    """Parse a Scribe JSON file into sentence-level blocks.
+
+    Splits on sentence-ending punctuation, speaker changes, and pauses
+    >= PAUSE_THRESHOLD seconds. Each block has {timecode, start, end, text}.
+    """
+    with open(json_path, encoding='utf-8') as f:
+        data = json.load(f)
+
+    words = [w for w in data.get('words', []) if w.get('type') == 'word']
+    if not words:
+        return []
+
+    blocks = []
+    cur_words = []
+    cur_speaker = None
+    prev_end = None
+
+    def flush():
+        if not cur_words:
+            return
+        text = ''.join(w['text'] for w in cur_words).strip()
+        if not text:
+            return
+        start = cur_words[0]['start']
+        end = cur_words[-1]['end']
+        blocks.append({
+            'timecode': f'{_fmt_srt_time(start)} --> {_fmt_srt_time(end)}',
+            'start': start,
+            'end': end,
+            'text': text,
+        })
+
+    for w in words:
+        speaker = w.get('speaker_id')
+        # Speaker change or long pause forces a break before this word
+        if cur_words:
+            speaker_changed = cur_speaker is not None and speaker != cur_speaker
+            long_pause = prev_end is not None and (w['start'] - prev_end) >= PAUSE_THRESHOLD
+            if speaker_changed or long_pause:
+                flush()
+                cur_words = []
+
+        cur_words.append(w)
+        cur_speaker = speaker
+        prev_end = w['end']
+
+        # Sentence-ending punctuation closes the sentence (punctuation stays with it)
+        text = w['text']
+        if text and text[-1] in SENTENCE_ENDERS:
+            flush()
+            cur_words = []
+            cur_speaker = None
+
+    flush()
+    return blocks
+
+
+def parse_input(path):
+    """Parse either a Scribe JSON or an SRT into a list of blocks."""
+    lower = path.lower()
+    if lower.endswith('.json'):
+        return parse_scribe_json(path)
+    return parse_srt(path)
 
 
 def load_state():
@@ -70,11 +165,11 @@ def load_blocks():
 
 # ── prepare ──────────────────────────────────────────────────────────────────
 
-def cmd_prepare(srt_path):
+def cmd_prepare(input_path):
     os.makedirs(STATE_DIR, exist_ok=True)
-    blocks = parse_srt(srt_path)
+    blocks = parse_input(input_path)
     if not blocks:
-        print(f'ERROR: no subtitle blocks found in {srt_path}', file=sys.stderr)
+        print(f'ERROR: no sentences found in {input_path}', file=sys.stderr)
         sys.exit(1)
     with open(BLOCKS_PATH, 'w', encoding='utf-8') as f:
         json.dump(blocks, f, ensure_ascii=False)
