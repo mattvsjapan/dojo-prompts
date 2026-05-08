@@ -16,7 +16,9 @@ These skills are designed for [Claude Code](https://docs.anthropic.com/en/docs/c
 - **[Create SRT](create-srt.md)** — Generate Japanese subtitles from video using ElevenLabs Scribe and MeCab bunsetsu segmentation
 - **[Translate SRT](translate-srt.md)** — Translate the Japanese subtitles into English for reference
 - **Condensed Audio** — Use [subs2cia](https://github.com/mattvsjapan/subs2cia) to extract just the spoken audio for passive listening
+- **[Primed Summaries](primed-summaries.md)** — Group sentences into topical chunks with English summaries, producing an SRT for primed-listening audio (English preview → original audio for the chunk → next preview)
 - **[Anki](anki.md)** — Generate Anki decks from your content with audio clips and subtitle text
+- **[Find Mistakes](find-mistakes.md)** — Analyze a transcript of you speaking Japanese to identify recurring mistakes and unnatural patterns, optionally generating an Anki deck of corrections
 
 ## Installation
 
