@@ -40,27 +40,53 @@ import requests
 
 RETRY_STATUSES = {429, 500, 502, 503, 504}
 
+# ChunkedEncodingError/ContentDecodingError cover the connection dying while
+# the response body is being received (they are RequestException subclasses,
+# not ConnectionError ones).
+RETRY_EXCEPTIONS = (requests.ConnectionError, requests.Timeout,
+                    requests.exceptions.ChunkedEncodingError,
+                    requests.exceptions.ContentDecodingError)
 
-def request_with_retries(make_request, what: str, attempts: int = 4):
+
+def request_with_retries(make_request, what: str, attempts: int = 4,
+                         retry_read_timeouts: bool = True,
+                         read_timeout_advice: str = ""):
     """Run make_request() (a zero-arg callable returning a Response), retrying
     with exponential backoff on transient failures: connection errors, timeouts,
-    and 429/5xx statuses.
+    mid-body disconnects, and 429/5xx statuses.
 
     STT accounts have low concurrency limits (as low as 2 concurrent jobs on
     some plans), and an over-limit upload surfaces as a connection reset
     mid-POST rather than a clean 429 -- so the exception path matters as much
     as the status-code path.
+
+    retry_read_timeouts=False is for paid, non-idempotent requests: a read
+    timeout means the request was fully sent and the provider may have accepted
+    (and billed) the job, so blindly re-sending risks paying twice and occupying
+    a second concurrency slot. Connect timeouts and connection resets are always
+    retried -- nothing was processed.
+
+    read_timeout_advice is appended to that exit message. This script is driven
+    by an AI agent, not a human, so the advice must be directly executable by
+    the agent (an exact command to run, or a plain-language question to put to
+    the user) -- never "check your account".
     """
     delay = 10
     for attempt in range(1, attempts + 1):
         try:
             resp = make_request()
-        except (requests.ConnectionError, requests.Timeout) as e:
+        except RETRY_EXCEPTIONS as e:
+            if (isinstance(e, requests.exceptions.ReadTimeout)
+                    and not retry_read_timeouts):
+                sys.exit(f"{what}: the request was fully sent but no response "
+                         f"arrived within the timeout, so the provider may have "
+                         f"accepted (and billed) it anyway. Not retrying "
+                         f"automatically. {read_timeout_advice} ({e})")
             failure = f"{type(e).__name__}: {e}"
         else:
             if resp.status_code not in RETRY_STATUSES:
                 return resp
-            failure = f"HTTP {resp.status_code}: {resp.text[:200]}"
+            failure = f"HTTP {resp.status_code}: {resp.text[:500]}"
         if attempt == attempts:
             sys.exit(f"{what} failed after {attempts} attempts: {failure}")
         print(f"{what}: {failure} -- retrying in {delay}s "
@@ -94,7 +120,14 @@ def transcribe_elevenlabs(audio_path: str, language: str) -> dict:
                 timeout=3600,
             )
 
-    resp = request_with_retries(post, "ElevenLabs transcription")
+    resp = request_with_retries(
+        post, "ElevenLabs transcription", retry_read_timeouts=False,
+        read_timeout_advice=(
+            "The response IS the transcript, so without it there is nothing to "
+            "recover. Tell the user in plain language: the transcription of this "
+            "file timed out and may already have been billed; re-running it may "
+            "bill this one file a second time. Ask whether to re-run, and only "
+            "re-run after they agree."))
     if not resp.ok:
         sys.exit(f"ElevenLabs error {resp.status_code}: {resp.text[:500]}")
     return resp.json()
@@ -120,7 +153,14 @@ def transcribe_soniox(audio_path: str, language: str) -> dict:
             return requests.post(f"{SONIOX_API}/files", headers=auth,
                                  files={"file": f}, timeout=3600)
 
-    r = request_with_retries(upload, "Soniox upload")
+    r = request_with_retries(
+        upload, "Soniox upload", retry_read_timeouts=False,
+        read_timeout_advice=(
+            "The file may have been stored on the account anyway. Check with: "
+            "curl -s -H \"Authorization: Bearer $SONIOX_API_KEY\" "
+            f"{SONIOX_API}/files -- if a file with this name is listed, DELETE "
+            f"it by id ({SONIOX_API}/files/<id>) so it does not orphan account "
+            "storage, then re-run this script."))
     if not r.ok:
         sys.exit(f"Soniox upload error {r.status_code}: {r.text[:500]}")
     file_id = r.json()["id"]
@@ -139,21 +179,45 @@ def transcribe_soniox(audio_path: str, language: str) -> dict:
             timeout=120,
         )
 
-    r = request_with_retries(create, "Soniox create")
+    r = request_with_retries(
+        create, "Soniox create", retry_read_timeouts=False,
+        read_timeout_advice=(
+            "A transcription job may have been created anyway. Check with: "
+            "curl -s -H \"Authorization: Bearer $SONIOX_API_KEY\" "
+            f"{SONIOX_API}/transcriptions -- if a recent job for file_id "
+            f"{file_id} is listed, do NOT create another (it would occupy one "
+            "of the few concurrency slots); re-running this script is only safe "
+            "after deleting that job by id "
+            f"({SONIOX_API}/transcriptions/<id>)."))
     if not r.ok:
         sys.exit(f"Soniox create error {r.status_code}: {r.text[:500]}")
     tid = r.json()["id"]
 
-    # 3. poll until done
+    # 3. poll until done (wall-clock deadline, not iteration count -- a
+    # black-holed connection burns up to 60s per attempt, not 2s)
     status = None
     detail = ""
-    for _ in range(1800):  # up to ~1h at 2s intervals
+    deadline = time.monotonic() + 3600
+    fail_streak = 0
+    while time.monotonic() < deadline:
         try:
             r = requests.get(f"{SONIOX_API}/transcriptions/{tid}", headers=auth, timeout=60)
+        except requests.RequestException as e:
+            fail_streak += 1
+            detail = f"{type(e).__name__}: {e}"
+            if fail_streak % 30 == 1:  # one stderr note per ~minute of failures
+                print(f"Soniox poll: {detail} -- still retrying", file=sys.stderr)
+            time.sleep(2)
+            continue
+        fail_streak = 0
+        if r.status_code in (401, 403, 404):
+            # Permanent: bad/revoked key or deleted job. Don't poll for an hour.
+            sys.exit(f"Soniox poll error {r.status_code}: {r.text[:500]}")
+        detail = r.text[:500]
+        try:
             status = r.json().get("status")
-            detail = r.text[:500]
-        except (requests.RequestException, ValueError):
-            pass  # transient; keep polling
+        except ValueError:
+            pass  # malformed body; keep polling
         if status in ("completed", "error"):
             break
         time.sleep(2)

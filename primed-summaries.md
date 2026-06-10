@@ -6,8 +6,8 @@ description: |
   timestamp spans a chunk's full time range and the text is the English
   summary. Used to build "primed listening" audio: English preview, then
   the original audio for that span. Processes one or many episodes — each
-  episode runs the full pipeline in its own isolated work dir, so multiple
-  episodes can run in parallel.
+  episode runs the full pipeline in its own isolated work dir, so episodes
+  can run in parallel (capped at 3 concurrent).
 allowed-tools:
   - Read
   - Write
@@ -120,23 +120,24 @@ episodes to their `OUTPUT_ALT` (which keeps the language code). If a collision
 still remains after that, **reject the batch** with a clear message rather than
 risk parallel clobbering.
 
-### 4. Spawn one episode subagent per input
+### 4. Spawn episode subagents — never more than 3 at a time
 
-Spawn a subagent (Task tool, `subagent_type: "general-purpose"`) for each episode.
+**Before spawning anything: if there are more than 5 inputs**, confirm with the
+user first — tell them the episode count, that the batch will run in waves of 3,
+and that a large batch is a significant token/usage commitment. Let them choose
+all episodes or a subset. Skip this only if the batch size was already confirmed
+up front (e.g. by an orchestrating skill like process-content in its step 1).
+
+**Concurrency cap: never run more than 3 episode subagents at once.** Process
+larger batches in waves — spawn up to 3, wait for all of them to return, then
+spawn the next wave. If the agent cannot run sub-tasks concurrently, run episodes
+one at a time. Do not spawn one subagent per input up front.
+
+Each episode gets one subagent (Task tool, `subagent_type: "general-purpose"`).
 The subagent inherits the current session's model — do not specify one. Give each
 subagent the **episode subagent prompt** below, filled in with that episode's
 `WORKDIR`, input path, chosen output path, and the source language (if the user
 supplied one).
-
-**Concurrency cap: never run more than 3 episode subagents at once.** For larger
-batches, process in waves — spawn up to 3, wait for all of them to return, then
-spawn the next wave. If the agent cannot run sub-tasks concurrently, run episodes
-one at a time. Do not spawn one subagent per input up front.
-
-**Batch confirmation: if there are more than 5 inputs**, stop and confirm with
-the user before spawning anything — tell them the episode count, that the batch
-will run in waves of 3, and that a large batch is a significant token/usage
-commitment. Let them choose all episodes or a subset.
 
 ### 5. Collect results
 
@@ -216,7 +217,8 @@ Inputs you were given:
   episode subagents touch transcript, SRT bodies, or JSON contents.
 - **One subagent per episode; windows run inline** — do not nest subagents.
 - **At most 3 episode subagents at a time** — larger batches run in waves, and
-  more than 5 inputs require user confirmation before spawning anything.
+  more than 5 inputs require user confirmation before spawning anything (unless
+  the batch size was already confirmed up front).
 - **Consistent behavior for 1 or N episodes** — only concurrency varies.
 - **Helper owns naming and cleanup** — get paths from `make-workdir`, never build
   output names by hand, and never `rm -rf` a work dir.

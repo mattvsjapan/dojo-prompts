@@ -30,7 +30,7 @@ Ask the user: **Do you already have transcripts or subtitle files for your langu
 
 - **If yes** — Ask for the file path(s) or directory and read them.
 - **If no** — Ask: **Do you have video/audio files of them that need to be transcribed?**
-  - **If yes** — **Ask which speech-to-text provider to use (ElevenLabs Scribe or Soniox)**, then transcribe each file with the helper. Make sure the chosen provider's key is set (`$ELEVENLABS_API_KEY` or `$SONIOX_API_KEY`); if not, ask the user to paste it.
+  - **If yes** — **Ask which speech-to-text provider to use (ElevenLabs Scribe or Soniox)**, then transcribe each file with the helper, **one at a time, never concurrently** (STT accounts allow only a few concurrent jobs; parallel uploads fail with connection resets). Make sure the chosen provider's key is set (`$ELEVENLABS_API_KEY` or `$SONIOX_API_KEY`); if not, ask the user to paste it.
     ```bash
     python3 dojo-prompts/scripts/transcribe.py --provider <elevenlabs|soniox> --language ja video.mp4
     ```

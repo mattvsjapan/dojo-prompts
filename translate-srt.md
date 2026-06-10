@@ -78,7 +78,7 @@ Every chunk must show `input exists: True`. If not, the split script failed — 
 
 ### 4. Launch Parallel Subagents
 
-Use the `Task` tool with `subagent_type: "general-purpose"` and `run_in_background: true` to launch **all chunks in parallel** (all Task calls in a single message).
+Use the `Task` tool with `subagent_type: "general-purpose"` and `run_in_background: true` to launch chunk subagents in parallel, **at most 3 at a time** — launch up to 3 in a single message, wait for their completion notifications, then launch the next 3. Do not launch all chunks at once: a long video can produce dozens of chunks, and a large subagent fan-out hits API rate limits and is hard to recover when something fails mid-flight.
 
 Each subagent receives a prompt like:
 

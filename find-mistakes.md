@@ -39,7 +39,7 @@ Rules:
 Ask the user: **Do you already have a transcript of yourself speaking Japanese?**
 
 - **If yes** — Ask for the file path(s) and read them.
-- **If no** — Ask if they have audio/video recordings of themselves speaking. If they do, **ask which speech-to-text provider to use (ElevenLabs Scribe or Soniox)** and transcribe each file with the helper:
+- **If no** — Ask if they have audio/video recordings of themselves speaking. If they do, **ask which speech-to-text provider to use (ElevenLabs Scribe or Soniox)** and transcribe each file with the helper, **one at a time, never concurrently** (STT accounts allow only a few concurrent jobs; parallel uploads fail with connection resets):
 
 ```bash
 python3 dojo-prompts/scripts/transcribe.py --provider <elevenlabs|soniox> --language ja recording.mp4

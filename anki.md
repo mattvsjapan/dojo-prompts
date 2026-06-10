@@ -105,7 +105,7 @@ subs2cia srs -b -i "*.mp4" -ai 0 -si 0 -p 500 -N -d out_srs --export-header-row
 4. **Rename source video files if needed** — skip if filenames are already ASCII-safe. Only add episode numbers (`_01`, `_02`) when there are multiple videos. See `process-content.md` for full renaming rules.
 5. Navigate to the source directory
 6. Run subs2cia with JSON input (preferred) or subtitle track indices (fallback)
-7. **Generate episode summaries** - for each TSV, read subtitle text and generate a translation briefing (see Episode Summary Format below), then prepend it to every row's `context` column. Use subagents to process all TSVs in parallel.
+7. **Generate episode summaries** - for each TSV, read subtitle text and generate a translation briefing (see Episode Summary Format below), then prepend it to every row's `context` column. Use subagents to process TSVs in parallel, **at most 3 at a time** — for larger batches, run waves of 3, not one subagent per TSV up front.
 8. **Combine all TSV files** into a single `combined.tsv`
 9. **Export as .apkg** - package the combined TSV and all media files into an Anki .apkg deck, saved to the source directory
 10. **Clean up** - delete the `out_srs/` directory and all intermediate files, leaving only the .apkg. If an `.anki.srt` was generated from a transcript JSON file, delete it too — the SRT is an intermediate artifact, not a final output. **Do NOT delete the transcript JSON file** — it may be needed by other workflows.
@@ -158,7 +158,7 @@ subs2cia srs -i "video.mp4" "transcript.json" -p 500 -N -d out_srs --export-head
 subs2cia srs -b -i "*.mp4" -ai <audio_index> -si <subtitle_index> -p 500 -N -d out_srs --export-header-row
 
 # 5. Generate episode summaries and prepend to context column
-#    Launch subagents in parallel (one per TSV) to:
+#    Launch subagents (one per TSV, at most 3 at a time) to:
 #    a) Read subtitle text from the 'text' column
 #    b) Generate a translation briefing (see Episode Summary Format below)
 #    c) Prepend "Episode summary: <briefing> | " to every row's context column

@@ -45,6 +45,14 @@ Then immediately ask what outputs they want:
 
 Also ask **which speech-to-text provider to use — ElevenLabs Scribe v2 or Soniox** — and make sure the matching API key is set (`$ELEVENLABS_API_KEY` or `$SONIOX_API_KEY`). Ask this now so the run doesn't pause mid-way.
 
+**If the URL is a playlist or channel, confirm the scale up front.** Check how many videos it contains:
+
+```bash
+yt-dlp --flat-playlist --print id "URL" | wc -l
+```
+
+Tell the user the count, remind them that every video gets downloaded and transcribed (a large batch is a long, usage-heavy run), and let them choose all videos or a subset. This up-front confirmation also stands in for the batch confirmation that primed-summaries would otherwise ask for mid-run — don't pause to re-ask later.
+
 Wait for the user to answer before starting any work.
 
 ### 2. Run everything
@@ -80,7 +88,7 @@ Rules for renaming:
 
 **Transcribe** — This always runs. Use the **create-srt** skill's steps 1-2 to transcribe each video with the chosen speech-to-text provider (ElevenLabs Scribe v2 or Soniox) and produce the transcript JSON file. Read `create-srt.md` (in the same directory as this file). The JSON is the foundation for all other outputs.
 
-> **Transcription is strictly sequential — one video at a time, in the main context.** Never spawn parallel subagents to transcribe multiple videos at once: speech-to-text accounts have low concurrency limits (as low as 2 concurrent jobs on some plans), so parallel uploads fail with mid-upload connection resets and burn usage on retries. Parallelism (e.g. primed-summaries episode subagents) is only allowed for steps that run **after** every transcript JSON exists on disk.
+> **Transcription is strictly sequential — one video at a time, in the main context.** Never spawn parallel subagents to transcribe multiple videos at once: speech-to-text accounts have low concurrency limits (as low as 2 concurrent jobs on some plans), so parallel uploads fail with mid-upload connection resets and burn usage on retries. Parallelism (e.g. primed-summaries episode subagents) is only allowed for steps that run **after** every transcript JSON exists on disk — and even then, never more than 3 concurrent subagents.
 
 > Because this step runs without further interaction, **ask which provider to use (and confirm the matching API key is set) back in step 1**, together with the question about which outputs they want — don't pause mid-run to ask.
 
