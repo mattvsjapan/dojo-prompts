@@ -26,6 +26,10 @@ Run `/create-srt <video_file>` to generate an SRT file from a video.
 pip install fugashi unidic-lite requests
 ```
 
+`ffmpeg` and `ffprobe` on PATH — `transcribe.py` uses them to strip the video
+stream and upload audio only (a few MB instead of the whole file). If they're
+missing it still works, just uploads the full file.
+
 An API key for whichever provider you choose:
 - **ElevenLabs** — `$ELEVENLABS_API_KEY` (Scribe access)
 - **Soniox** — `$SONIOX_API_KEY`

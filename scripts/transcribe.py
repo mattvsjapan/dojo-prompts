@@ -25,12 +25,21 @@ Usage:
 The API key is read from the environment:
     ELEVENLABS_API_KEY   for --provider elevenlabs
     SONIOX_API_KEY       for --provider soniox
+
+If the input has a video stream, its audio is demuxed to a temp file with
+ffmpeg and only that is uploaded -- a few MB instead of the whole video, which
+also makes a mid-upload connection reset far less likely on the low-concurrency
+STT accounts this targets. Falls back to uploading the original file when
+ffmpeg/ffprobe are missing or extraction fails. Needs ffmpeg + ffprobe on PATH.
 """
 import argparse
 import json
 import math
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 import time
 
 import requests
@@ -294,6 +303,82 @@ def _word(text, start, end, typ, speaker_id, logprob):
     }
 
 
+# ── Audio extraction ──────────────────────────────────────────────────────────
+
+# Audio codecs we can losslessly stream-copy (no re-encode) into a container
+# the STT providers accept, keyed to the right extension. Anything not listed
+# (e.g. ac3/dts) is re-encoded to AAC/m4a instead.
+_COPY_CONTAINER = {
+    "aac": ".m4a", "mp3": ".mp3", "flac": ".flac",
+    "opus": ".opus", "vorbis": ".ogg",
+    "pcm_s16le": ".wav", "pcm_s24le": ".wav", "pcm_f32le": ".wav",
+}
+
+
+def _probe_streams(path: str):
+    """Return (has_video, audio_codec) via ffprobe. has_video is True only for a
+    real video stream, not an attached cover image. audio_codec is None when no
+    audio stream is found or ffprobe fails."""
+    def probe(args):
+        out = subprocess.run(["ffprobe", "-v", "error", *args, "-of",
+                              "default=nw=1:nk=1", path],
+                             capture_output=True, text=True)
+        return out.stdout.split() if out.returncode == 0 else []
+
+    # attached_pic == 1 marks cover-art/thumbnail video streams; a disposition
+    # of 0 is a genuine video track.
+    has_video = any(flag == "0" for flag in probe(
+        ["-select_streams", "v", "-show_entries",
+         "stream_disposition=attached_pic"]))
+    acodecs = probe(["-select_streams", "a:0", "-show_entries",
+                     "stream=codec_name"])
+    return has_video, (acodecs[0] if acodecs else None)
+
+
+def extract_audio(path: str):
+    """Demux audio out of a video so we upload a few MB instead of the whole
+    file (a smaller upload is also far less likely to die mid-stream on the
+    low-concurrency STT accounts this script targets).
+
+    Returns (upload_path, tmp_to_cleanup). tmp_to_cleanup is None when nothing
+    was created -- already audio-only, tooling unavailable, or extraction failed
+    -- and the caller uploads the original path unchanged."""
+    if not (shutil.which("ffmpeg") and shutil.which("ffprobe")):
+        print("transcribe: ffmpeg/ffprobe not found -- uploading the original "
+              "file without stripping video (install ffmpeg to shrink uploads "
+              "and reduce upload failures).", file=sys.stderr)
+        return path, None
+
+    has_video, codec = _probe_streams(path)
+    if codec is None or not has_video:
+        return path, None  # already audio-only (or no probable audio); leave it
+
+    # Prefer a lossless stream-copy; fall back to an AAC re-encode for codecs we
+    # can't safely copy into a common container.
+    plans = []
+    copy_ext = _COPY_CONTAINER.get(codec)
+    if copy_ext:
+        plans.append((copy_ext, ["-c:a", "copy"]))
+    plans.append((".m4a", ["-c:a", "aac", "-b:a", "128k"]))
+
+    for ext, acodec in plans:
+        fd, tmp = tempfile.mkstemp(suffix=ext, prefix="transcribe_audio_")
+        os.close(fd)
+        run = subprocess.run(["ffmpeg", "-y", "-i", path, "-vn", *acodec, tmp],
+                             capture_output=True, text=True)
+        if run.returncode == 0 and os.path.getsize(tmp) > 0:
+            print(f"transcribe: stripped video; uploading audio only "
+                  f"({os.path.basename(tmp)}, "
+                  f"{os.path.getsize(tmp) // 1024} KiB).", file=sys.stderr)
+            return tmp, tmp
+        if os.path.exists(tmp):
+            os.remove(tmp)
+
+    print("transcribe: audio extraction failed -- uploading the original file.",
+          file=sys.stderr)
+    return path, None
+
+
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 def main():
@@ -307,10 +392,15 @@ def main():
     if not os.path.exists(args.audio):
         sys.exit(f"File not found: {args.audio}")
 
-    if args.provider == "elevenlabs":
-        data = transcribe_elevenlabs(args.audio, args.language)
-    else:
-        data = transcribe_soniox(args.audio, args.language)
+    upload_path, tmp = extract_audio(args.audio)
+    try:
+        if args.provider == "elevenlabs":
+            data = transcribe_elevenlabs(upload_path, args.language)
+        else:
+            data = transcribe_soniox(upload_path, args.language)
+    finally:
+        if tmp and os.path.exists(tmp):
+            os.remove(tmp)
 
     stem = args.output or os.path.splitext(os.path.basename(args.audio))[0]
     out_path = f"{stem}.json"

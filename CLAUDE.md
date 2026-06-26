@@ -31,6 +31,7 @@ Check with `which` or `command -v` for CLI tools, and `pip show` for Python pack
 # CLI tools
 command -v yt-dlp >/dev/null 2>&1 || echo "MISSING: yt-dlp"
 command -v ffprobe >/dev/null 2>&1 || echo "MISSING: ffprobe"
+command -v ffmpeg >/dev/null 2>&1 || echo "MISSING: ffmpeg"
 
 # Python packages
 pip show fugashi >/dev/null 2>&1 || echo "MISSING: fugashi"
