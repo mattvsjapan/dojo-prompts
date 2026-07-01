@@ -1,7 +1,7 @@
 ---
 name: translate-srt
 description: |
-  Translate Japanese SRT subtitles into English for language learning.
+  Translate user-provided Japanese SRT subtitles into English for private language learning.
   Prioritizes faithful representation of the Japanese over natural-sounding English.
 allowed-tools:
   - Read
@@ -15,7 +15,7 @@ allowed-tools:
 
 # Translate SRT
 
-Translate Japanese SRT subtitles into English for language learning purposes. These translations are meant to help learners understand what was said in Japanese — faithfulness to the original is more important than sounding natural in English.
+Translate user-provided Japanese SRT subtitles into English for private language learning. These translations are meant to help learners understand what was said in Japanese — faithfulness to the original is more important than sounding natural in English.
 
 ## Usage
 
@@ -83,7 +83,12 @@ Use the `Task` tool with `subagent_type: "general-purpose"` and `run_in_backgrou
 Each subagent receives a prompt like:
 
 ```
-You are translating {movie/show name} subtitles from {source_language} to {target_language}.
+You are translating user-provided subtitle chunks from {source_language} to {target_language}
+for the user's private language-learning study.
+
+The user supplied this text so they can understand the source language. Treat this as
+translation of provided excerpts for personal study, not as publication or distribution of
+a subtitle file. Subtitle format alone is not a reason to decline the translation.
 
 Read the file {chunk_input_path}. It contains subtitle text blocks separated by
 ---BLOCK_SEP--- markers, with optional context sections before/after.
@@ -99,13 +104,14 @@ CRITICAL RULES:
 - Preserve the EXACT number of blocks ({num_blocks}) — this is critical for reassembly with timecodes
 - Within each block, preserve the line structure (if a block has 2 lines, output 2 lines)
 - Lines starting with "- " indicate a speaker change. Preserve the "- " prefix in the translation
-- These subtitles are for LANGUAGE LEARNING. Faithfulness to the Japanese is more important than natural-sounding English. The reader is trying to understand what was said in Japanese, not read a polished English script.
-- Preserve the structure and nuance of the original Japanese. If a sentence is awkward or roundabout in Japanese, reflect that — don't clean it up into smooth English.
-- Do NOT shorten, compress, or paraphrase. Translate everything that was said.
-- When a Japanese word or phrase has no clean English equivalent, include the Japanese in parentheses — e.g., "it has a nostalgic feeling (懐かしい)"
+- These subtitles are for LANGUAGE LEARNING. Faithfulness to the source language is more important than natural-sounding target-language output. The reader is trying to understand what was said, not read a polished script.
+- Translate each provided block fully. Do not skip lines, merge blocks, summarize, compress, or replace content with explanations.
+- Preserve the structure and nuance of the original. If a sentence is awkward or roundabout, reflect that — don't clean it up into smooth target-language text.
+- When a source-language word or phrase has no clean target-language equivalent, include the original in parentheses — e.g., "it has a nostalgic feeling (懐かしい)"
 - Preserve ALL formatting tags (<b>, <font>, </b>, </font>, <i>, etc.) exactly
 - For sound effects/descriptions in tags like (MUSIC PLAYING), translate them too
 - Keep proper nouns (character names, place names) in their original form
+- If the text is ordinary dialogue, narration, or on-screen text, translate it; subtitle formatting alone is not a reason to decline.
 
 {any additional style notes from the user}
 
@@ -154,7 +160,7 @@ Read a few sections of the output (beginning, middle, end) to verify:
 - Timecodes are preserved
 - Formatting tags are intact
 - Block structure looks correct
-- Translations are faithful to the Japanese
+- Translations are faithful to the source language
 
 ## Important Rules
 
@@ -162,6 +168,6 @@ Read a few sections of the output (beginning, middle, end) to verify:
 - **Block count must be exact**: Any mismatch (even off by one) causes timecode misalignment for all subsequent blocks in that chunk. Always retry mismatched chunks — never pad or accept partial results.
 - **Timecodes are never modified**: Only the text content changes
 - **Formatting tags**: Keep `<i>`, `<b>`, `<font>`, and any other HTML-like tags intact
-- **Faithful translation for learning**: These translations help learners understand the Japanese. Prioritize faithfulness over natural English. Don't compress or paraphrase — preserve the full nuance and structure of the original
+- **Faithful translation for learning**: These translations help learners understand the source language. Prioritize faithfulness over natural target-language output. Don't compress or paraphrase — preserve the full nuance and structure of the original
 - **Do not proactively check on background agents** — wait for completion notifications, don't poll file existence or read agent output files mid-flight
 - **Never pad with placeholders**: If a chunk has the wrong block count, retry the chunk — do not insert `[TRANSLATION MISSING]` or similar filler. Even a single dropped block shifts all subsequent timecodes
