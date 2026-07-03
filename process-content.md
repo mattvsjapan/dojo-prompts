@@ -59,14 +59,14 @@ Wait for the user to answer before starting any work.
 
 Once you have the URL and know what they want, execute all steps in sequence without further interaction.
 
-**Download** with yt-dlp:
+**Download** with yt-dlp — pin the **H.264 (avc1)** video codec, never AV1 (AV1 makes subs2srs/subs2cia deck creation far slower; the selector falls back to any mp4, then AV1, only if H.264 is unavailable):
 
 ```bash
 # Single video
-yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(title)s.%(ext)s" "URL"
+yt-dlp -f "bv*[vcodec^=avc1]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(title)s.%(ext)s" "URL"
 
 # Playlist or channel
-yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
+yt-dlp -f "bv*[vcodec^=avc1]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
 ```
 
 **Sanitize and rename** — Check if filenames need renaming **before any processing**. subs2cia and other tools name their outputs after the input file — if you process before renaming, outputs will have mismatched names.

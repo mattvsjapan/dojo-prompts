@@ -57,12 +57,12 @@ If a required tool is missing, just install it and move on. No need to ask — b
 
 ## Important
 
-- **Downloading videos**: Always use yt-dlp and always download as MP4. After downloading, rename files with a romanized version of the full title (see `process-content.md` for detailed naming rules):
+- **Downloading videos**: Always use yt-dlp and always download as MP4 with the **H.264 (avc1)** video codec — never AV1. AV1 is smaller but makes subs2srs/subs2cia deck creation far slower, so pin the codec (falls back to any mp4, then AV1, only if H.264 is unavailable). After downloading, rename files with a romanized version of the full title (see `process-content.md` for detailed naming rules):
   ```bash
   # Single video
-  yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(title)s.%(ext)s" "URL"
+  yt-dlp -f "bv*[vcodec^=avc1]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(title)s.%(ext)s" "URL"
   # Playlist or channel
-  yt-dlp -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
+  yt-dlp -f "bv*[vcodec^=avc1]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
   # Then rename to romanized lowercase with underscores
   # e.g. 「機械オンチに「API」を説明する動画」→ kikai_onchi_ni_api_wo_setsumei_suru_douga_01.mp4
   ```
