@@ -1,9 +1,9 @@
 -- primed_listening.lua  (2025-06-11)
 --
 --  n          : toggle Primed Listening on/off (no play/pause side-effects)
---  Cmd+n / Cmd+b (or Meta+n / Meta+b):
---               - Cmd+n  ↑ pause_per_char by 0.01 s
---               - Cmd+b  ↓ pause_per_char by 0.01 s  (min 0.01)
+--  Cmd+n / Cmd+b (macOS) or Meta+n / Meta+b (Linux/Windows):
+--               - Cmd/Meta+n  ↑ pause_per_char by 0.01 s
+--               - Cmd/Meta+b  ↓ pause_per_char by 0.01 s  (min 0.01)
 --  SPACE / p   : when playback is paused *by this script* …
 --                  • 1st press → cancel auto-resume, keep paused
 --                  • 2nd press → resume playback
@@ -188,14 +188,14 @@ mp.add_key_binding("n", "toggle-primed-listening", function()
     set_enabled(not enabled)
 end)
 
-for _, mod in ipairs({ "CMD", "Meta" }) do
-    mp.add_key_binding(mod .. "+n", "increase-ppc-" .. mod, function()
-        pause_per_char = pause_per_char + 0.01
-        show_ppc()
-    end)
-    mp.add_key_binding(mod .. "+b", "decrease-ppc-" .. mod, function()
-        pause_per_char = math.max(min_ppc, pause_per_char - 0.01)
-        show_ppc()
-    end)
-end
+local ppc_mod = (jit and jit.os == "OSX") and "CMD" or "Meta"
+
+mp.add_key_binding(ppc_mod .. "+n", "increase-ppc", function()
+    pause_per_char = pause_per_char + 0.01
+    show_ppc()
+end)
+mp.add_key_binding(ppc_mod .. "+b", "decrease-ppc", function()
+    pause_per_char = math.max(min_ppc, pause_per_char - 0.01)
+    show_ppc()
+end)
 ------------------------------------------------------------------
