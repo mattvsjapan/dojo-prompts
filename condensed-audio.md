@@ -64,7 +64,7 @@ subs2cia condense -i "video.mp4" "video.json" -t 1500 -p 200 --no-gen-subtitle -
 subs2cia condense -i "video.mp4" -si 0 --no-gen-subtitle -d out_condense
 ```
 
-For YouTube downloads, use `-ai 0` to explicitly select the first audio stream rather than `-tl ja` — yt-dlp sometimes mislabels audio stream languages.
+For YouTube sources, use `-ai 0` to explicitly select the first audio stream rather than `-tl ja` — yt-dlp sometimes mislabels audio stream languages.
 
 ### 4. Move and clean up
 

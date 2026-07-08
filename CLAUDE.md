@@ -9,7 +9,7 @@ When the user asks about any of the following, read the corresponding skill file
 | User says something like... | Skill file |
 |---|---|
 | "discover content", "find something to watch", "help me find content" | `dojo-prompts/content-discovery.md` |
-| "process this video", "download and transcribe", "process content" | `dojo-prompts/process-content.md` |
+| "process this video", "process and transcribe", "process content" | `dojo-prompts/process-content.md` |
 | "create subtitles", "transcribe this", "make an SRT", "generate subs" | `dojo-prompts/create-srt.md` |
 | "translate subtitles", "translate this SRT", "make English subs" | `dojo-prompts/translate-srt.md` |
 | "make an Anki deck", "subs2srs", "create flashcards" | `dojo-prompts/anki.md` |
@@ -17,7 +17,7 @@ When the user asks about any of the following, read the corresponding skill file
 | "find my mistakes", "analyze my output", "what am I doing wrong" | `dojo-prompts/find-mistakes.md` |
 | "condensed audio", "condense this", "passive listening" | `dojo-prompts/condensed-audio.md` |
 | "primed summaries", "summarize subs", "english previews", "primed listening summaries" | `dojo-prompts/primed-summaries.md` |
-| "download a video", "download this" | Use yt-dlp (see below) |
+| "process a video", "process this" | Use yt-dlp (see below) |
 
 When a skill is triggered, read the full skill file first, then follow its workflow step by step.
 
@@ -57,7 +57,7 @@ If a required tool is missing, just install it and move on. No need to ask — b
 
 ## Important
 
-- **Downloading videos**: Always use yt-dlp and always download as MP4 with the **H.264 (avc1)** video codec — never AV1. AV1 is smaller but makes subs2srs/subs2cia deck creation far slower, so pin the codec (falls back to any mp4, then AV1, only if H.264 is unavailable). After downloading, rename files with a romanized version of the full title (see `process-content.md` for detailed naming rules):
+- **Processing videos**: Always use yt-dlp and always produce MP4 with the **H.264 (avc1)** video codec — never AV1. AV1 is smaller but makes subs2srs/subs2cia deck creation far slower, so pin the codec (falls back to any mp4, then AV1, only if H.264 is unavailable). After yt-dlp writes the file, rename it with a romanized version of the full title (see `process-content.md` for detailed naming rules):
   ```bash
   # Single video
   yt-dlp -f "bv*[vcodec^=avc1]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(title)s.%(ext)s" "URL"

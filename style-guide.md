@@ -38,11 +38,11 @@ Ask the user: **Do you already have transcripts or subtitle files for your langu
   - **If no** — Ask the user to provide a **YouTube channel URL or playlist URL** for their language parent. Then:
     1. List available videos with yt-dlp
     2. Select roughly 20 hours of long-form, unscripted content (prioritize livestreams, podcasts, interviews — avoid short or scripted videos)
-    3. Download auto-generated Japanese subtitles:
+    3. Write auto-generated Japanese subtitles:
        ```bash
        yt-dlp --write-auto-sub --sub-lang ja --skip-download --sub-format vtt -o "%(title)s.%(ext)s" "PLAYLIST_OR_CHANNEL_URL"
        ```
-    4. Read the downloaded subtitle files for analysis.
+    4. Read the subtitle files for analysis.
 
 ### 2. Analyze
 

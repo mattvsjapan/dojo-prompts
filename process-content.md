@@ -1,7 +1,7 @@
 ---
 name: process-content
 description: |
-  Download Japanese content from YouTube and process it into subtitles,
+  Process Japanese content from YouTube into subtitles,
   condensed audio, and/or Anki decks. Orchestrates the other skills.
 allowed-tools:
   - Bash
@@ -16,7 +16,7 @@ allowed-tools:
 
 # Process Content
 
-Download Japanese content from YouTube and process it into study materials.
+Process Japanese content from YouTube into study materials.
 
 ## Usage
 
@@ -26,14 +26,15 @@ Run `/process-content` and the skill will walk you through the process.
 
 ### 1. Gather everything up front
 
-Ask the user for a YouTube URL. This can be:
+Ask the user for a video source. This can be:
 - A single video
 - A playlist
 - A full channel
+- A local audio/video file
 
 Then immediately ask what outputs they want:
 
-> I'll download this and transcribe it. What would you like me to generate?
+> I'll process this and transcribe it. What would you like me to generate?
 >
 > - **Japanese subtitles** — SRT with natural bunsetsu line breaks for watching
 > - **English subtitles** — translated SRT for language learning reference
@@ -51,15 +52,15 @@ Also ask **which speech-to-text provider to use — ElevenLabs Scribe v2 or Soni
 yt-dlp --flat-playlist --print id "URL" | wc -l
 ```
 
-Tell the user the count, remind them that every video gets downloaded and transcribed (a large batch is a long, usage-heavy run), and let them choose all videos or a subset. This up-front confirmation also stands in for the batch confirmation that primed-summaries would otherwise ask for mid-run — don't pause to re-ask later.
+Tell the user the count, remind them that every video gets processed and transcribed (a large batch is a long, usage-heavy run), and let them choose all videos or a subset. This up-front confirmation also stands in for the batch confirmation that primed-summaries would otherwise ask for mid-run — don't pause to re-ask later.
 
 Wait for the user to answer before starting any work.
 
 ### 2. Run everything
 
-Once you have the URL and know what they want, execute all steps in sequence without further interaction.
+Once you have the source and know what they want, execute all steps in sequence without further interaction.
 
-**Download** with yt-dlp — pin the **H.264 (avc1)** video codec, never AV1 (AV1 makes subs2srs/subs2cia deck creation far slower; the selector falls back to any mp4, then AV1, only if H.264 is unavailable):
+**Process URL sources with yt-dlp** — pin the **H.264 (avc1)** video codec, never AV1 (AV1 makes subs2srs/subs2cia deck creation far slower; the selector falls back to any mp4, then AV1, only if H.264 is unavailable):
 
 ```bash
 # Single video
@@ -68,6 +69,8 @@ yt-dlp -f "bv*[vcodec^=avc1]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --
 # Playlist or channel
 yt-dlp -f "bv*[vcodec^=avc1]+ba[ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]" --merge-output-format mp4 -o "%(playlist_index)03d_%(title)s.%(ext)s" "URL"
 ```
+
+If yt-dlp can't process the source directly, ask the user for a local file, subtitle file, or transcript and continue from there.
 
 **Sanitize and rename** — Check if filenames need renaming **before any processing**. subs2cia and other tools name their outputs after the input file — if you process before renaming, outputs will have mismatched names.
 
@@ -111,4 +114,4 @@ Tell the user what was generated and where the output files are.
 
 ## Notes
 
-- **Audio stream language tags are unreliable.** yt-dlp sometimes tags Japanese audio as "English" because YouTube's metadata is wrong. When using subs2cia with `-tl ja`, this can cause it to skip the correct audio stream. For YouTube downloads, use `-ai 0` to explicitly select the first (usually only) audio stream rather than relying on language matching.
+- **Audio stream language tags are unreliable.** yt-dlp sometimes tags Japanese audio as "English" because YouTube's metadata is wrong. When using subs2cia with `-tl ja`, this can cause it to skip the correct audio stream. For YouTube processing, use `-ai 0` to explicitly select the first (usually only) audio stream rather than relying on language matching.

@@ -7,7 +7,7 @@ These skills are designed for [Claude Code](https://docs.anthropic.com/en/docs/c
 ## The workflow
 
 1. **[Content Discovery](content-discovery.md)** — Find Japanese content that matches your personal taste, not generic "top 10 for learners" lists
-2. **[Process Content](process-content.md)** — Give it a YouTube URL and it handles the rest: downloads, transcribes, and lets you pick which outputs you want
+2. **[Process Content](process-content.md)** — Give it a YouTube URL and it handles the rest: processes with yt-dlp, transcribes, and lets you pick which outputs you want
 3. **[Primed Listening](primed-listening.lua)** — mpv script that pauses after each subtitle line, giving you time to read before listening
 4. **[Style Guide](style-guide.md)** — Analyze a native speaker's transcripts to create a speaking style guide you can internalize
 
@@ -44,7 +44,7 @@ All skills also work as plain prompts — paste the contents into any AI chat (C
 
 ## Requirements
 
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) for downloading content
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) for processing YouTube content
 - [ffmpeg](https://ffmpeg.org/) (with `ffprobe`) — used to strip video and upload audio only when transcribing, and by the condensed-audio/Anki steps
 - A speech-to-text API key for transcription (create-srt, find-mistakes, style-guide) — either an [ElevenLabs API key](https://elevenlabs.io/) with Scribe access (`$ELEVENLABS_API_KEY`) or a [Soniox API key](https://soniox.com/) (`$SONIOX_API_KEY`). You're asked which provider to use each time.
 - [mpv](https://mpv.io/) media player (for primed listening)
